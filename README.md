@@ -1,0 +1,1 @@
+# Hardening_RedHat_ATI
