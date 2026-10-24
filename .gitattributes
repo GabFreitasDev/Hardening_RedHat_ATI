@@ -1,0 +1,12 @@
+# Terminações de linha LF em tudo que roda no RHEL.
+# Importante para quem desenvolve no Windows: um .sh com CRLF quebra no bash.
+* text=auto
+*.py   text eol=lf
+*.sh   text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.md   text eol=lf
+*.txt  text eol=lf
+*.toml text eol=lf
+*.json text eol=lf
+*.pdf  binary

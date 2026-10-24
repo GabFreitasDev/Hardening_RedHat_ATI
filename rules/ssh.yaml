@@ -1,1 +1,18 @@
+# Regras de SSH (trilha do Aluno B, dor 6 - mínimo privilégio).
+# Formato e campos: docs/CONTRATO.md
+#
+# Atenção: no YAML, "no"/"yes" SEM aspas viram booleano. Escreva sempre "no" entre aspas.
+# Atenção: o campo `referencia` só deixa de ser "A CONFIRMAR" depois de conferir o item
+# no CIS Benchmark oficial do RHEL 9 (não usar numeração de memória).
 
+- id: SSH-001
+  descricao: Desabilitar login direto como root
+  referencia: "CIS RHEL 9 - SSH PermitRootLogin (A CONFIRMAR o item no benchmark)"
+  dor_ati: [6]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: sshd_config
+  parametros:
+    chave: PermitRootLogin
+    valor: "no"
+  recarregar: sshd
