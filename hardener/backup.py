@@ -1,12 +1,4 @@
-"""Backup antes de alterar e rollback.
-
-Cada execução de `enforce --apply` que altera algo cria UMA sessão em
-<estado_dir>/backups/<id>/ com:
-  manifest.json   -> o que foi salvo (gravado a cada arquivo, resiste a falhas no meio)
-  arquivos/NNNN   -> cópia do conteúdo original
-
-Rollback restaura os arquivos (ou apaga os que não existiam) em ordem inversa.
-"""
+"""Backup antes de alterar e rollback."""
 
 from __future__ import annotations
 
@@ -29,13 +21,10 @@ class SessaoBackup:
         self.entradas: List[Dict[str, Any]] = []
         self.revertida = False
 
-    # -- gravação -------------------------------------------------------
     def salvar_arquivo(
         self, regra_id: str, logico: str, real: Path, servico: Optional[str] = None
     ) -> None:
-        """Guarda o estado atual de `real` (1x por arquivo e por sessão)."""
         if any(e["caminho"] == logico for e in self.entradas):
-            # já salvo nesta sessão: mantém o estado ORIGINAL, só registra o serviço
             if servico:
                 for e in self.entradas:
                     if e["caminho"] == logico:
@@ -68,12 +57,7 @@ class SessaoBackup:
         tmp.write_text(json.dumps(dados, indent=2, ensure_ascii=False), encoding="utf-8")
         tmp.replace(self.diretorio / "manifest.json")
 
-    # -- restauração ----------------------------------------------------
     def restaurar(self, servico: Optional[str] = None) -> List[str]:
-        """Restaura arquivos desta sessão (todos, ou só os ligados a `servico`).
-
-        Retorna a lista de ações realizadas.
-        """
         acoes: List[str] = []
         for e in reversed(self.entradas):
             if servico is not None and servico not in e.get("servicos", []):
@@ -140,7 +124,6 @@ class GerenciadorBackup:
         return s
 
     def ultima_pendente(self) -> Optional[SessaoBackup]:
-        """Sessão mais recente que ainda não foi revertida."""
         for sid in reversed(self.listar()):
             s = self.abrir(sid)
             if not s.revertida and s.entradas:

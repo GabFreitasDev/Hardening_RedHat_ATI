@@ -1,3 +1,0 @@
-# Dependências de desenvolvimento (somente nas máquinas dos alunos, não na VM)
--r requirements.txt
-pytest>=7.4

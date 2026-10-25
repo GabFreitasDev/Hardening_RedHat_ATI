@@ -1,0 +1,4 @@
+usuario,nome,departamento,status
+root,Superusuario Root,Sistemas,ativo
+admin_ati,Administrador ATI,Infraestrutura,ativo
+secops,Seguranca Operacional,SecOps,ativo

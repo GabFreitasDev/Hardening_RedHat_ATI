@@ -1,0 +1,7 @@
+{
+  "name": "Hardening RedHat ATI",
+  "description": "Ferramenta de auditoria, aplicação e reversão de regras de hardening para Red Hat Enterprise Linux 9 baseada em políticas declarativas e CIS Benchmark com mapeamento de dores da ATI.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,3 +1,9 @@
+# Node / Web build artifacts
+node_modules/
+dist/
+bun.lock
+*.tsbuildinfo
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

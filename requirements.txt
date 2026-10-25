@@ -1,2 +1,0 @@
-# Dependências de execução (a ferramenta deve rodar só com isto no RHEL 9, Python 3.9)
-PyYAML>=6.0,<7

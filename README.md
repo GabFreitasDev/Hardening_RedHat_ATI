@@ -1,78 +1,60 @@
-# Hardening_RedHat_ATI
+# Hardening RedHat ATI (React & TypeScript)
 
-Ferramenta de linha de comando que **verifica, aplica e reverte** regras de hardening em
-Red Hat Enterprise Linux 9 (e equivalentes Rocky/AlmaLinux 9), a partir de uma política
-declarativa em YAML. Projeto da disciplina de Sistemas Operacionais, motivado por dores
-relatadas pela ATI (Agência Estadual de Tecnologia da Informação, Recife/PE).
+Aplicação web interativa para **auditoria, aplicação e reversão de regras de hardening em Red Hat Enterprise Linux 9** (e derivados Rocky/AlmaLinux 9), baseada em políticas declarativas em YAML alinhadas ao **CIS Benchmark** e mapeadas às 6 dores operacionais da **ATI** (Agência Estadual de Tecnologia da Informação, Recife/PE).
 
-- Escopo completo: [`demo/docs/Escopo_Projeto_Hardening_ATI.pdf`](demo/docs/Escopo_Projeto_Hardening_ATI.pdf)
-- Contrato entre módulos: [`docs/CONTRATO.md`](docs/CONTRATO.md)
-- Montar a VM de testes: [`docs/AMBIENTE_VM.md`](docs/AMBIENTE_VM.md)
-- Regras planejadas (dor / regra / CIS): [`docs/TABELA_DOR_REGRA_CIS.md`](docs/TABELA_DOR_REGRA_CIS.md)
-- Fila de validação no sistema real: [`VALIDAR_NA_VM.md`](VALIDAR_NA_VM.md)
+Projeto reescrito em **React, TypeScript, Vite e Tailwind CSS**, preservando rigorosamente todo o contrato, a lógica de negócio do motor, a trava de segurança da VM (`/etc/hardener-vm`), backups atômicos (`manifest.json`) e o formato exato da CLI e relatórios.
 
-> **Regra de segurança:** o `enforce --apply` só deve rodar na VM de testes, nunca nas máquinas
-> pessoais. A CLI recusa rodar sem root, fora de RHEL 9 ou sem o marcador `/etc/hardener-vm`.
+---
 
-## Preparar o ambiente de desenvolvimento (máquina pessoal)
+## Funcionalidades Principais
 
-Com o repositório aberto no VS Code e o `.venv` criado:
+1. **Dashboard & Matriz de Regras CIS / ATI**:
+   - Índice de conformidade em tempo real (0 a 100%) e cálculo de código de saída (`0` tudo conforme, `1` pendências, `2` falha/erro).
+   - Classificação e filtragem pelas **6 Dores da ATI**:
+     - **Dor 1: Ransomware** (`/tmp`, `/var/tmp`, `/dev/shm` com `noexec,nosuid,nodev`, SELinux em `enforcing`, kernel ASLR/sysctl).
+     - **Dor 2: Uploads de arquivos** (diretórios de upload sem permissão de execução, dono/grupo restrito, contexto SELinux).
+     - **Dor 3: Movimentação lateral** (firewalld zona `drop`, portas restritas, SSH `AllowGroups`, desativação de `ip_forward` e redirects ICMP).
+     - **Dor 4: Patches** (controle e auditoria de vulnerabilidades).
+     - **Dor 5: Revogação de credenciais** (offboarding, bloqueio de contas inativas com `usermod -L` e `chage -E 0`, `nologin`, arquivamento de `authorized_keys`, limpeza de `wheel`).
+     - **Dor 6: Mínimo privilégio** (`PermitRootLogin no`, permissões de `sshd_config`, proibição de `NOPASSWD` e `ALL` em sudoers, UID 0 exclusivo para root, `umask 027`, `pam_faillock`, `pam_pwquality`).
 
-```powershell
-# Windows (PowerShell)
-.venv\Scripts\Activate.ps1
-pip install -r requirements-dev.txt
-```
+2. **Motor de Execução (Audit, Enforce & Rollback)**:
+   - **Audit (`audit`)**: verifica o estado do sistema sem realizar alterações.
+   - **Enforce Dry-Run (`enforce`)**: simula detalhadamente o que seria corrigido (`SERIA_CORRIGIDO`).
+   - **Enforce Apply (`enforce --apply`)**:
+     - Trava de segurança ativa: exige RHEL 9, privilégio root (EUID 0) e presença do marcador `/etc/hardener-vm`.
+     - Gravação atômica de drop-in em `/etc/ssh/sshd_config.d/00-hardener.conf` e arquivos do sistema.
+     - Validação prévia de sintaxe do serviço (`sshd -t`, `visudo -c`) e recarga controlada (`systemctl reload`). Se houver falha, as alterações daquele serviço são revertidas automaticamente para manter a disponibilidade.
+     - Total idempotência: execuções repetidas mantêm `CONFORME` sem criar sessões adicionais de backup nem recargas desnecessárias.
+   - **Rollback (`rollback`)**:
+     - Desfaz a última sessão de enforce pendente em ordem inversa, restaura arquivos originais (ou remove drop-ins criados que não existiam) e recarrega os serviços afetados.
+
+3. **Terminal CLI Interativo**:
+   - Emulador de terminal shell para execução de comandos (`python -m hardener audit`, `enforce`, `enforce --apply`, `rollback`, `report --formato json`, `validar`).
+   - Botões de atalho rápido e visualização idêntica à saída em texto e JSON da ferramenta.
+
+4. **Editor de Políticas Declarativas (YAML)**:
+   - Leitura e edição de `rules/*.yaml` com validação de campos obrigatórios (`id`, `descricao`, `referencia`, `dor_ati`, `severidade`, `plataforma`, `primitiva`) e detecção de itens CIS pendentes de confirmação ("A CONFIRMAR").
+
+5. **Gerenciador de Backups & Ponto de Restauração**:
+   - Inspeção de cada sessão em `/var/lib/hardener/backups/<id>/manifest.json` com diff de arquivos salvos e status de reversão.
+
+6. **Laboratório de Sistema RHEL 9 Virtual**:
+   - Visualizador de arquivos de configuração do sistema (`/etc/ssh/sshd_config`, `/etc/sudoers`, `/etc/sysctl.d/99-sysctl.conf`, `/etc/fstab`, etc.).
+   - Alternadores para simular falha em `sshd -t` e `systemctl reload` para testar reversões de segurança.
+
+---
+
+## Desenvolvimento e Execução
 
 ```bash
-# Linux / macOS
-source .venv/bin/activate
-pip install -r requirements-dev.txt
+npm install
+npm run dev
 ```
 
-Depois, confira que está tudo certo:
+A aplicação roda em `http://localhost:3000`.
+Para build de produção:
 
 ```bash
-pytest                      # testes unitários (usam mocks e diretórios temporários)
-python -m hardener validar  # confere os YAML de rules/
+npm run build
 ```
-
-Na máquina pessoal você escreve código, YAML e testes. O que depende do sistema real (SELinux,
-firewalld, sysctl, montagens, contas) é validado na VM: veja `VALIDAR_NA_VM.md`.
-
-## Uso (na VM)
-
-```bash
-sudo python3 -m hardener audit                   # só verifica; gera relatório "antes"
-sudo python3 -m hardener enforce                 # dry-run (padrão): mostra o que mudaria
-sudo python3 -m hardener enforce --apply         # aplica, com backup, validação e recarga
-sudo python3 -m hardener rollback                # desfaz a última sessão de enforce
-python3 -m hardener report [--formato json]      # reexibe o último relatório salvo
-```
-
-Filtros: `--regra SSH-001` (repetível), `--dor 6` (repetível), `--json arquivo.json`.
-Códigos de saída: `0` tudo conforme, `1` há pendências, `2` houve erro/falha.
-
-## Estrutura
-
-```
-hardener/
-  cli.py        interface de linha de comando (audit, enforce, rollback, report, validar)
-  engine.py     motor: orquestra verificar -> corrigir -> reverificar -> validar -> recarregar
-  policy.py     leitura e validação dos YAML
-  backup.py     backup antes de alterar e rollback
-  report.py     relatório por regra e por dor da ATI (texto e JSON)
-  runner.py     único ponto que executa comandos do sistema
-  rhel.py       tudo que é específico de RHEL (validadores, systemctl, detecção de plataforma)
-  models.py     tipos compartilhados (Regra, Resultado, Contexto)
-  checks/       primitivas reutilizáveis (uma por tipo de configuração)
-rules/          política em YAML, um arquivo por domínio (ssh, accounts, mounts, ...)
-tests/          pytest
-demo/           script de demonstração e documentos de apoio
-docs/           contrato, ambiente, tabela dor/regra/CIS
-```
-
-## Status
-
-Já funciona ponta a ponta com a regra de exemplo `SSH-001` (audit, dry-run, enforce, idempotência,
-rollback, relatório). O restante das ~30 regras está listado em `docs/TABELA_DOR_REGRA_CIS.md`.

@@ -1,17 +1,4 @@
-"""Primitiva `sshd_config`: uma diretiva efetiva do sshd.
-
-Verifica o valor EFETIVO com `sshd -T` (já resolve Include, Match padrão e o
-"primeiro valor vence" do sshd). Corrige escrevendo num arquivo próprio em
-/etc/ssh/sshd_config.d/, sem editar o /etc/ssh/sshd_config original.
-
-Parâmetros:
-  chave: nome da diretiva (ex.: PermitRootLogin)
-  valor: valor esperado (use aspas no YAML: "no", pois no sem aspas vira booleano)
-
-ATENÇÃO (validar na VM, ver VALIDAR_NA_VM.md): no sshd o PRIMEIRO valor lido de
-cada diretiva vence. O arquivo se chama 00-hardener.conf para ser lido antes de
-50-redhat.conf e similares.
-"""
+"""Primitiva `sshd_config`: uma diretiva efetiva do sshd."""
 
 from __future__ import annotations
 
@@ -26,7 +13,6 @@ CABECALHO = "# Gerenciado pela ferramenta hardener. Alterações manuais serão 
 
 
 def _texto(valor: Any) -> str:
-    """O PyYAML lê no/yes sem aspas como booleano; devolve a forma do sshd."""
     if isinstance(valor, bool):
         return "yes" if valor else "no"
     return str(valor).strip()
@@ -57,7 +43,6 @@ class SshdConfig(Primitiva):
             if len(partes) == 2 and partes[0].lower() == chave:
                 valores.append(partes[1].strip())
         atual = " | ".join(valores) if valores else None
-        # sshd -T normaliza para minúsculas na maioria das diretivas; comparamos sem distinção.
         conforme = len(valores) == 1 and valores[0].lower() == esperado.lower()
         return Verificacao(conforme=conforme, atual=atual, esperado=esperado)
 

@@ -1,11 +1,13 @@
 """Interface de linha de comando.
 
-  python -m hardener validar                 # confere os YAML (roda em qualquer máquina)
-  python -m hardener audit                   # só verifica
-  python -m hardener enforce                 # = enforce --dry-run (padrão): mostra o que mudaria
-  python -m hardener enforce --apply         # aplica (somente na VM; ver trava abaixo)
-  python -m hardener rollback [--sessao ID]  # desfaz a última sessão de enforce
-  python -m hardener report                  # reexibe o último relatório salvo
+  python -m hardener validar                                  # confere os YAML (roda em qualquer máquina)
+  python -m hardener audit                                    # só verifica
+  python -m hardener enforce                                  # = enforce --dry-run (padrão): mostra o que mudaria
+  python -m hardener enforce --apply                          # aplica (somente na VM; ver trava abaixo)
+  python -m hardener rollback [--sessao ID]                   # desfaz a última sessão de enforce
+  python -m hardener report                                   # reexibe o último relatório salvo
+  python -m hardener offboarding --autorizados lista.csv      # dry-run de revogação de contas (Dor 5)
+  python -m hardener offboarding --autorizados lista.csv --apply  # aplica o bloqueio das contas não autorizadas
 """
 
 from __future__ import annotations
@@ -21,13 +23,14 @@ from hardener import __version__, report, rhel
 from hardener.backup import ErroBackup
 from hardener.checks import REGISTRO
 from hardener.engine import Motor
+from hardener.offboarding import executar_offboarding
 from hardener.policy import PoliticaInvalida, carregar_politica, filtrar, referencias_pendentes
 from hardener.runner import Runner
 
 RAIZ_REPO = Path(__file__).resolve().parent.parent
 REGRAS_PADRAO = RAIZ_REPO / "rules"
 ESTADO_PADRAO = Path(os.environ.get("HARDENER_ESTADO_DIR", "/var/lib/hardener"))
-MARCADOR_VM = "etc/hardener-vm"  # relativo à raiz; criado na VM com: sudo touch /etc/hardener-vm
+MARCADOR_VM = "etc/hardener-vm"
 
 
 def construir_parser() -> argparse.ArgumentParser:
@@ -61,15 +64,35 @@ def construir_parser() -> argparse.ArgumentParser:
     rp = sub.add_parser("report", help="mostra o último relatório salvo")
     rp.add_argument("--estado-dir", type=Path, default=ESTADO_PADRAO)
     rp.add_argument("--formato", choices=("texto", "json"), default="texto")
+
+    # Comando offboarding (Dor 5 da ATI - Requisito do Escopo)
+    off = sub.add_parser(
+        "offboarding",
+        parents=[comum],
+        help="revogação de credenciais e contas locais fora da lista autorizada (Dor 5 da ATI)"
+    )
+    off.add_argument(
+        "--autorizados",
+        type=Path,
+        required=True,
+        metavar="ARQ.CSV",
+        help="caminho para o arquivo CSV com a lista de usuários autorizados",
+    )
+    off.add_argument(
+        "--apply",
+        action="store_true",
+        help="aplica as revogações e bloqueios (padrão é dry-run)",
+    )
+
     return p
 
 
 def trava_vm(raiz: Path, plataforma: str, euid: Optional[int]) -> Optional[str]:
-    """Motivo de recusa do `enforce --apply`, ou None se pode prosseguir."""
+    """Motivo de recusa do `enforce --apply` ou `offboarding --apply`, ou None se pode prosseguir."""
     if plataforma != rhel.PLATAFORMA_ALVO:
-        return "plataforma '%s': enforce --apply só roda em RHEL 9 (ou Rocky/Alma 9)" % plataforma
+        return "plataforma '%s': enforce/offboarding --apply só roda em RHEL 9 (ou Rocky/Alma 9)" % plataforma
     if euid != 0:
-        return "enforce --apply exige root (use sudo)"
+        return "enforce/offboarding --apply exige root (use sudo)"
     if not (raiz / MARCADOR_VM).exists():
         return (
             "trava de segurança: /%s não existe. O enforce só deve rodar na VM de testes; "
@@ -81,7 +104,7 @@ def trava_vm(raiz: Path, plataforma: str, euid: Optional[int]) -> Optional[str]:
 def _configurar_saida() -> None:
     for fluxo in (sys.stdout, sys.stderr):
         try:
-            fluxo.reconfigure(errors="replace")  # type: ignore[attr-defined]
+            fluxo.reconfigure(errors="replace")
         except (AttributeError, ValueError):
             pass
 
@@ -140,6 +163,47 @@ def main(argv: Optional[List[str]] = None, runner: Optional[Runner] = None) -> i
                 print(linha)
             return 0
 
+        # offboarding --autorizados lista.csv [--apply]
+        if args.comando == "offboarding":
+            euid = os.geteuid() if hasattr(os, "geteuid") else None
+            if args.apply:
+                motivo = trava_vm(args.raiz, plataforma, euid)
+                if motivo:
+                    print("RECUSADO: %s" % motivo, file=sys.stderr)
+                    return 2
+
+            res_off = executar_offboarding(
+                caminho_csv=args.autorizados,
+                raiz=args.raiz,
+                estado_dir=args.estado_dir,
+                aplicar=args.apply,
+                runner=runner,
+            )
+
+            print("hardener %s | modo: offboarding (%s) | plataforma: %s" % (
+                __version__, res_off["modo"], plataforma
+            ))
+            print("Arquivo de autorizados: %s (%d conta(s) homologada(s))" % (
+                res_off["arquivo_csv"], res_off["total_autorizados"]
+            ))
+            print("Total de contas locais avaliadas no /etc/passwd: %d" % res_off["total_locais_avaliados"])
+
+            if not res_off["contas_nao_autorizadas"]:
+                print("Conformidade total: nenhuma conta órfã ou não autorizada encontrada.")
+                return 0
+
+            print("\nContas identificadas para revogação: %s" % ", ".join(res_off["contas_nao_autorizadas"]))
+            print("\nAções executadas:")
+            for acao in res_off["acoes"]:
+                print("  - %s" % acao)
+            for mudanca in res_off.get("mudancas", []):
+                print("  [ALTERADO] %s" % mudanca)
+
+            if getattr(args, "json", None):
+                args.json.write_text(json.dumps(res_off, indent=2, ensure_ascii=False), encoding="utf-8")
+
+            return 0 if args.apply else 1
+
         # audit / enforce
         regras = _carregar(args)
         avisos: List[str] = []
@@ -172,7 +236,7 @@ def main(argv: Optional[List[str]] = None, runner: Optional[Runner] = None) -> i
     except PoliticaInvalida as e:
         print("política inválida:\n%s" % e, file=sys.stderr)
         return 2
-    except ErroBackup as e:
+    except (ErroBackup, FileNotFoundError) as e:
         print("erro: %s" % e, file=sys.stderr)
         return 2
 

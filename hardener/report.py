@@ -52,7 +52,6 @@ def por_dor(resultados: Sequence[Resultado]) -> Dict[int, Dict[str, int]]:
 
 
 def codigo_saida(resultados: Sequence[Resultado]) -> int:
-    """0 tudo conforme; 1 há pendências de conformidade; 2 houve erro/falha."""
     status = {r.status for r in resultados}
     if status & {Status.ERRO, Status.FALHOU}:
         return 2
