@@ -87,6 +87,7 @@ export const REGRAS_PADRAO: Regra[] = [
     parametros: {
       uid_zero_apenas: "root"
     },
+    somente_auditoria: true,
     origem: "rules/accounts.yaml"
   },
   {
@@ -115,6 +116,7 @@ export const REGRAS_PADRAO: Regra[] = [
     parametros: {
       bloquear_inseguros: ["rlogin", "rsh", "rcp"]
     },
+    somente_auditoria: true,
     origem: "rules/accounts.yaml"
   },
   {

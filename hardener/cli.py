@@ -45,6 +45,7 @@ def construir_parser() -> argparse.ArgumentParser:
     comum.add_argument("--estado-dir", type=Path, default=ESTADO_PADRAO, help="onde guardar backups e relatórios")
     comum.add_argument("--raiz", type=Path, default=Path("/"), help="prefixo de caminhos (desenvolvimento/testes)")
     comum.add_argument("--json", type=Path, metavar="ARQ", help="grava também o relatório JSON neste arquivo")
+    comum.add_argument("--autorizados", type=Path, metavar="CSV", default=None, help="arquivo CSV de autorizados (opcional em audit/enforce)")
 
     sub.add_parser("validar", help="valida os YAML da política").add_argument(
         "--regras-dir", type=Path, default=REGRAS_PADRAO
@@ -213,6 +214,20 @@ def main(argv: Optional[List[str]] = None, runner: Optional[Runner] = None) -> i
             print("nenhuma regra selecionada", file=sys.stderr)
             return 2
         motor = Motor(regras, runner, args.raiz, args.estado_dir, plataforma)
+
+        if getattr(args, "autorizados", None):
+            res_off = executar_offboarding(
+                caminho_csv=args.autorizados,
+                raiz=args.raiz,
+                estado_dir=args.estado_dir,
+                aplicar=(args.comando == "enforce" and getattr(args, "apply", False)),
+                runner=runner,
+            )
+            if res_off["contas_nao_autorizadas"]:
+                avisos.append(
+                    "Offboarding (%s): %d conta(s) não autorizada(s) para revogação: %s"
+                    % (args.autorizados.name, len(res_off["contas_nao_autorizadas"]), ", ".join(res_off["contas_nao_autorizadas"]))
+                )
 
         if args.comando == "audit":
             resultados = motor.auditar()

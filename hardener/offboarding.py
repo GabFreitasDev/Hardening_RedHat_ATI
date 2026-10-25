@@ -137,17 +137,34 @@ def executar_offboarding(
     gerenciador = GerenciadorBackup(estado_dir, raiz)
     sessao: Optional[SessaoBackup] = None
 
-    if aplicar:
-        sessao = gerenciador.nova_sessao()
-        # Faz backup prévio dos arquivos sensíveis
-        for arq in ("/etc/passwd", "/etc/shadow", "/etc/group"):
-            caminho_real = raiz / arq.lstrip("/")
-            if caminho_real.exists():
-                sessao.salvar_arquivo("OFF-001", arq, caminho_real)
-
     for conta in contas_nao_autorizadas:
         user = conta["username"]
         home = Path(conta["home"])
+
+        # Checa se a conta já foi desativada em execução anterior (idempotência)
+        auth_keys = raiz / home.as_posix().lstrip("/") / ".ssh" / "authorized_keys"
+        shell_inativo = conta["shell"] in ("/sbin/nologin", "/usr/sbin/nologin", "/bin/false")
+        chaves_ausentes = not auth_keys.exists()
+
+        caminho_group = raiz / "etc" / "group"
+        no_wheel = False
+        if caminho_group.exists():
+            for g_linha in caminho_group.read_text(encoding="utf-8").splitlines():
+                if g_linha.startswith("wheel:"):
+                    partes = g_linha.split(":")
+                    if len(partes) >= 4 and user in partes[3].split(","):
+                        no_wheel = True
+
+        if shell_inativo and chaves_ausentes and not no_wheel:
+            relatorio["acoes"].append("[JA_BLOQUEADO] Conta '%s' já se encontra neutralizada (shell nologin, sem chaves e sem wheel)" % user)
+            continue
+
+        if aplicar and sessao is None:
+            sessao = gerenciador.nova_sessao()
+            for arq in ("/etc/passwd", "/etc/shadow", "/etc/group"):
+                caminho_real = raiz / arq.lstrip("/")
+                if caminho_real.exists():
+                    sessao.salvar_arquivo("OFF-001", arq, caminho_real)
 
         # 1. Bloquear conta (usermod -L e chage -E 0)
         desc_lock = "Bloquear conta '%s' (usermod -L e chage -E 0)" % user
@@ -159,7 +176,7 @@ def executar_offboarding(
             relatorio["mudancas"].append("usermod -L e chage -E 0 em '%s'" % user)
 
         # 2. Alterar shell para /sbin/nologin
-        if conta["shell"] not in ("/sbin/nologin", "/usr/sbin/nologin", "/bin/false"):
+        if not shell_inativo:
             desc_shell = "Alterar shell de '%s' para /sbin/nologin" % user
             if not aplicar:
                 relatorio["acoes"].append("[SERIA_CORRIGIDO] %s" % desc_shell)

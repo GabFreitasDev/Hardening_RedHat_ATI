@@ -34,6 +34,10 @@ def detectar_plataforma(raiz: Path = Path("/")) -> str:
     return "%s%s" % (ident or "?", versao.split(".")[0])
 
 
+# Daemons que rodam no systemd e necessitam de reload
+SERVICOS_COM_RELOAD = {"sshd", "firewalld", "auditd", "systemd"}
+
+
 def validar_servico(runner: Runner, servico: str) -> Tuple[bool, str]:
     cmd = VALIDADORES.get(servico)
     if cmd is None:
@@ -43,5 +47,8 @@ def validar_servico(runner: Runner, servico: str) -> Tuple[bool, str]:
 
 
 def recarregar_servico(runner: Runner, servico: str) -> Tuple[bool, str]:
+    # Se for um validador de arquivo estático sem daemon (ex: sudoers / visudo)
+    if servico not in SERVICOS_COM_RELOAD:
+        return True, "validação sintática concluída (sem daemon para recarregar)"
     r = runner.executar(["systemctl", "reload", servico])
     return r.ok, (r.erro or r.saida).strip()

@@ -1,1 +1,68 @@
+# Regras de Contas, Privilégios e Identidades (Dores 5 e 6 da ATI)
+# Trilha do Aluno B
 
+- id: SUDO-001
+  descricao: Impedir diretiva NOPASSWD indevida no sudoers e sudoers.d
+  referencia: "CIS RHEL 9 - 5.3.4 Ensure sudo commands require authentication"
+  dor_ati: [6]
+  severidade: critica
+  plataforma: rhel9
+  primitiva: sudoers
+  parametros:
+    proibir: NOPASSWD
+  recarregar: sudoers
+
+- id: SUDO-002
+  descricao: Impedir permissões excessivas ALL indevidas em sudoers
+  referencia: "CIS RHEL 9 - 5.3.3 Sudoers restricted specification"
+  dor_ati: [6]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: sudoers
+  parametros:
+    verificar_regras_gerais: true
+  recarregar: sudoers
+
+- id: SUDO-003
+  descricao: Grupo wheel restrito exclusivamente a administradores autorizados
+  referencia: "CIS RHEL 9 - 5.3.2 Restrict wheel group membership"
+  dor_ati: [6]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: conta_usuario
+  parametros:
+    grupo: wheel
+    autorizados: ["root", "admin_ati", "secops"]
+
+- id: ACC-001
+  descricao: UID 0 exclusivo para conta root (auditoria manual)
+  referencia: "CIS RHEL 9 - 5.4.3 Ensure root is the only UID 0 account"
+  dor_ati: [6]
+  severidade: critica
+  plataforma: rhel9
+  primitiva: conta_usuario
+  parametros:
+    uid_zero_apenas: root
+  somente_auditoria: true
+
+- id: PERM-001
+  descricao: Auditoria e restrição de binários com SUID/SGID perigosos
+  referencia: "CIS RHEL 9 - 6.1.13 Ensure no unauthorized SUID/SGID files exist"
+  dor_ati: [6]
+  severidade: media
+  plataforma: rhel9
+  primitiva: suid_sgid
+  parametros:
+    bloquear_inseguros: ["rlogin", "rsh", "rcp"]
+  somente_auditoria: true
+
+- id: OFF-001
+  descricao: Contas locais inativas ou fora da lista de autorizados bloqueadas
+  referencia: "Requisito ATI - Trilha B Offboarding"
+  dor_ati: [5]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: offboarding
+  parametros:
+    acao: bloquear_inativos
+    expiracao_dias: 90

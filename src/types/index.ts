@@ -87,6 +87,7 @@ export interface Regra {
   parametros: Record<string, any>;
   recarregar?: string;
   origem?: string;
+  somente_auditoria?: boolean;
 }
 
 export interface Verificacao {

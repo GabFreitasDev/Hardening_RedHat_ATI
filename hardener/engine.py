@@ -75,6 +75,13 @@ class Motor:
             resultados.append(res)
             if res.status != Status.NAO_CONFORME or prim is None:
                 continue
+            if regra.somente_auditoria:
+                res.detalhe = (
+                    "Auditoria manual: mantido não conforme por segurança (ação manual requerida)"
+                    if aplicar
+                    else "Auditoria manual: correção automática desabilitada por segurança (ação manual requerida)"
+                )
+                continue
             if not aplicar:
                 res.status = Status.SERIA_CORRIGIDO
                 res.detalhe = prim.descrever(regra.parametros)
