@@ -23,8 +23,13 @@ from hardener import __version__, report, rhel
 from hardener.backup import ErroBackup
 from hardener.checks import REGISTRO
 from hardener.engine import Motor
-from hardener.offboarding import executar_offboarding
+from hardener.offboarding import ErroOffboarding, executar_offboarding
 from hardener.policy import PoliticaInvalida, carregar_politica, filtrar, referencias_pendentes
+from hardener.relatorios_contas import (
+    relatorio_chaves_ssh_sem_dono,
+    relatorio_contas_inativas,
+    relatorio_senhas_sem_expiracao,
+)
 from hardener.runner import Runner
 
 RAIZ_REPO = Path(__file__).resolve().parent.parent
@@ -45,7 +50,6 @@ def construir_parser() -> argparse.ArgumentParser:
     comum.add_argument("--estado-dir", type=Path, default=ESTADO_PADRAO, help="onde guardar backups e relatórios")
     comum.add_argument("--raiz", type=Path, default=Path("/"), help="prefixo de caminhos (desenvolvimento/testes)")
     comum.add_argument("--json", type=Path, metavar="ARQ", help="grava também o relatório JSON neste arquivo")
-    comum.add_argument("--autorizados", type=Path, metavar="CSV", default=None, help="arquivo CSV de autorizados (opcional em audit/enforce)")
 
     sub.add_parser("validar", help="valida os YAML da política").add_argument(
         "--regras-dir", type=Path, default=REGRAS_PADRAO
@@ -189,8 +193,31 @@ def main(argv: Optional[List[str]] = None, runner: Optional[Runner] = None) -> i
             ))
             print("Total de contas locais avaliadas no /etc/passwd: %d" % res_off["total_locais_avaliados"])
 
+            # Bloco Relatórios (OFF-006, OFF-007, OFF-008)
+            inativas = relatorio_contas_inativas(args.raiz, runner)
+            senhas = relatorio_senhas_sem_expiracao(args.raiz, runner)
+            chaves = relatorio_chaves_ssh_sem_dono(args.raiz, runner)
+            res_off["relatorios"] = {
+                "contas_inativas": inativas,
+                "senhas_sem_expiracao": senhas,
+                "chaves_ssh_sem_dono": chaves,
+            }
+
+            print("\nRelatórios:")
+            print("  Contas inativas (OFF-006): %d encontrada(s)" % len(inativas))
+            for item in inativas:
+                print("    - %s: %s" % (item["usuario"], item["motivo"]))
+
+            print("  Senhas sem expiração (OFF-007): %d encontrada(s)" % len(senhas))
+            for item in senhas:
+                print("    - %s: %s" % (item["usuario"], item["motivo"]))
+
+            print("  Chaves SSH sem dono (OFF-008): %d encontrada(s)" % len(chaves))
+            for item in chaves:
+                print("    - %s: %s" % (item["usuario"], item["motivo"]))
+
             if not res_off["contas_nao_autorizadas"]:
-                print("Conformidade total: nenhuma conta órfã ou não autorizada encontrada.")
+                print("\nConformidade total: nenhuma conta órfã ou não autorizada encontrada.")
                 return 0
 
             print("\nContas identificadas para revogação: %s" % ", ".join(res_off["contas_nao_autorizadas"]))
@@ -215,20 +242,6 @@ def main(argv: Optional[List[str]] = None, runner: Optional[Runner] = None) -> i
             return 2
         motor = Motor(regras, runner, args.raiz, args.estado_dir, plataforma)
 
-        if getattr(args, "autorizados", None):
-            res_off = executar_offboarding(
-                caminho_csv=args.autorizados,
-                raiz=args.raiz,
-                estado_dir=args.estado_dir,
-                aplicar=(args.comando == "enforce" and getattr(args, "apply", False)),
-                runner=runner,
-            )
-            if res_off["contas_nao_autorizadas"]:
-                avisos.append(
-                    "Offboarding (%s): %d conta(s) não autorizada(s) para revogação: %s"
-                    % (args.autorizados.name, len(res_off["contas_nao_autorizadas"]), ", ".join(res_off["contas_nao_autorizadas"]))
-                )
-
         if args.comando == "audit":
             resultados = motor.auditar()
             _emitir(resultados, "audit", plataforma, args, avisos, salvar=True)
@@ -251,7 +264,7 @@ def main(argv: Optional[List[str]] = None, runner: Optional[Runner] = None) -> i
     except PoliticaInvalida as e:
         print("política inválida:\n%s" % e, file=sys.stderr)
         return 2
-    except (ErroBackup, FileNotFoundError) as e:
+    except (ErroBackup, FileNotFoundError, ErroOffboarding) as e:
         print("erro: %s" % e, file=sys.stderr)
         return 2
 

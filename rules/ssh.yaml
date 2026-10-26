@@ -16,3 +16,18 @@
     chave: PermitRootLogin
     valor: "no"
   recarregar: sshd
+
+- id: SSH-002
+  descricao: Permissões de /etc/ssh/sshd_config
+  referencia: "CIS RHEL 9 - Permissões do sshd_config (A CONFIRMAR o item no benchmark)"
+  dor_ati: [6]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: permissao_arquivo
+  parametros:
+    caminho: /etc/ssh/sshd_config
+    modo_max: "0600"
+    dono: root
+    grupo: root
+  # valores a confirmar na VM com stat -c '%a %U:%G' e no benchmark
+

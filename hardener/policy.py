@@ -14,7 +14,7 @@ CAMPOS_OBRIGATORIOS = {
     "plataforma",
     "primitiva",
 }
-CAMPOS_CONHECIDOS = CAMPOS_OBRIGATORIOS | {"parametros", "recarregar", "somente_auditoria"}
+CAMPOS_CONHECIDOS = CAMPOS_OBRIGATORIOS | {"parametros", "recarregar"}
 
 
 class PoliticaInvalida(Exception):
@@ -88,7 +88,6 @@ def carregar_arquivo(caminho: Path, primitivas_conhecidas: Iterable[str]) -> Lis
                     parametros=item.get("parametros") or {},
                     recarregar=item.get("recarregar"),
                     origem=str(caminho),
-                    somente_auditoria=bool(item.get("somente_auditoria", False)),
                 )
             )
 

@@ -36,7 +36,6 @@ class Regra:
     parametros: Dict[str, Any] = field(default_factory=dict)
     recarregar: Optional[str] = None
     origem: str = ""
-    somente_auditoria: bool = False
 
 
 @dataclass
