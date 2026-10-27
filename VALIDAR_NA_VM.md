@@ -51,43 +51,137 @@ Antes de começar: snapshot `base-limpa` feito, segunda sessão SSH aberta, `/et
 - [ ] Confirmar com `authselect current` se o faillock está ativo na pilha PAM do RHEL 9 (ex.: feature `with-faillock`).
 - [ ] Testar com uma segunda sessão SSH aberta durante todo o processo de enforce e rollback para garantir que o acesso administrativo não seja bloqueado acidentalmente.
 - [ ] Confirmar que a ordem de leitura (última ocorrência vale) é a adotada pelos módulos PAM (`pam_faillock`, `pam_pwquality`) e utilitários do shadow (`login.defs`).
-- [ ] PAM-001 / PAM-001b audit reprova na VM com `faillock.conf` padrão/desconfigurado.
-- [ ] PAM-001 / PAM-001b enforce --apply corrige `deny = 5` e `unlock_time = 900` em `/etc/security/faillock.conf`.
-- [ ] PAM-001 / PAM-001b segundo enforce --apply não altera nada (idempotência).
-- [ ] PAM-001 / PAM-001b rollback restaura `/etc/security/faillock.conf` anterior.
-- [ ] PAM-002 audit, enforce --apply (`minlen = 14` em `/etc/security/pwquality.conf`) e rollback funcionam na VM.
-- [ ] ACC-002 audit, enforce --apply (`UMASK 027` em `/etc/login.defs`) e rollback funcionam na VM.
+
+### PAM-001: Limite de tentativas de autenticação inválidas (deny) no faillock
+
+- [ ] PAM-001 audit reprova na VM suja com `deny = 0` ou sem configuração em `/etc/security/faillock.conf`
+- [ ] PAM-001 enforce --apply corrige e o relatório mostra CORRIGIDO (`deny = 5`)
+- [ ] PAM-001 segundo enforce --apply não altera nada
+- [ ] PAM-001 rollback restaura o estado anterior
+- [ ] PAM-001 nenhum serviço legítimo quebrou: login SSH com senha correta continua funcionando e o operador não fica bloqueado (testar com uma segunda sessão aberta)
+
+### PAM-001b: Tempo de bloqueio de conta (unlock_time) no faillock
+
+- [ ] PAM-001b audit reprova na VM suja com `unlock_time = 0` ou sem configuração em `/etc/security/faillock.conf`
+- [ ] PAM-001b enforce --apply corrige e o relatório mostra CORRIGIDO (`unlock_time = 900`)
+- [ ] PAM-001b segundo enforce --apply não altera nada
+- [ ] PAM-001b rollback restaura o estado anterior
+- [ ] PAM-001b nenhum serviço legítimo quebrou: login SSH com senha correta continua funcionando e o operador não fica bloqueado (testar com uma segunda sessão aberta)
+
+### PAM-002: Tamanho mínimo de senha (minlen) no pwquality
+
+- [ ] PAM-002 audit reprova na VM suja com `minlen = 6` em `/etc/security/pwquality.conf`
+- [ ] PAM-002 enforce --apply corrige e o relatório mostra CORRIGIDO (`minlen = 14`)
+- [ ] PAM-002 segundo enforce --apply não altera nada
+- [ ] PAM-002 rollback restaura o estado anterior
+- [ ] PAM-002 nenhum serviço legítimo quebrou: o comando `passwd` continua funcionando
+
+### ACC-002: Máscara padrão de criação de arquivos (UMASK) em login.defs
+
+- [ ] ACC-002 audit reprova na VM suja com `UMASK 022` em `/etc/login.defs`
+- [ ] ACC-002 enforce --apply corrige e o relatório mostra CORRIGIDO (`UMASK 027`)
+- [ ] ACC-002 segundo enforce --apply não altera nada
+- [ ] ACC-002 rollback restaura o estado anterior
+- [ ] ACC-002 nenhum serviço legítimo quebrou: arquivos criados por um usuário novo saem com o umask esperado
 
 ## Pendentes: regras de sudoers (SUDO-001, SUDO-002)
 
 - [ ] Testar sempre com duas sessões SSH/root abertas antes de rodar enforce em regras de sudoers para prevenir lockout.
-- [ ] Confirmar que `sudo -l` continua funcionando normalmente para o usuário administrador de teste.
 - [ ] Garantir que o enforce não removeu a única forma de virar root na máquina (ex.: `%wheel` preservado com acesso via senha).
-- [ ] Depois do `enforce --apply`, rodar `sudo visudo -c` e confirmar que passa sem alertas ou erros.
 - [ ] Testar caminho de falha: com o arquivo quebrado de propósito, o motor reverte alterações (depende do ajuste do Aluno A em `engine.py` e `rhel.py` para validar via `visudo -c` sem chamar `systemctl reload sudoers`).
-- [ ] SUDO-001 audit reprova na VM suja com as regras de `demo/sujar_servidor.sh` (`/etc/sudoers.d/99-inseguro-ati`).
-- [ ] SUDO-001 enforce --apply comenta a linha com `# hardener: desativado: `, preserva permissão `0440` e segundo enforce não altera nada.
-- [ ] SUDO-002 audit não reprova `%wheel ALL=(ALL) ALL`, mas reprova `estagiario ALL=(ALL) ALL`.
-- [ ] SUDO-001 e SUDO-002 rollback restauram o arquivo original perfeitamente.
 
-## Pendentes: contas e privilégios (ACC-001, SUDO-003)
+### SUDO-001: Proibir NOPASSWD indevido em sudoers e sudoers.d
 
-- [ ] ACC-001 audit reprova na VM se houver conta secundária com UID 0 (ex.: `toor:x:0:0:...` adicionado em `/etc/passwd`).
-- [ ] ACC-001 audit é somente auditoria: não tenta remoção automática e instrui revisão manual do administrador.
-- [ ] SUDO-003 audit reprova se usuário não homologado estiver em `wheel` (ex.: `ex_funcionario`).
-- [ ] SUDO-003 enforce --apply remove membro indevido via `gpasswd -d` mantendo `admin_ati` e `root`.
-- [ ] SUDO-003 segundo enforce --apply é idempotente e rollback restaura `/etc/group` e `/etc/gshadow`.
+- [ ] SUDO-001 audit reprova na VM suja com as regras de `demo/sujar_servidor.sh` (`/etc/sudoers.d/99-inseguro-ati`)
+- [ ] SUDO-001 enforce --apply corrige e o relatório mostra CORRIGIDO (comenta a linha com `# hardener: desativado: ` e modo 0440)
+- [ ] SUDO-001 segundo enforce --apply não altera nada
+- [ ] SUDO-001 rollback restaura o estado anterior
+- [ ] SUDO-001 nenhum serviço legítimo quebrou: `sudo -l` continua funcionando para o usuário de teste e `sudo visudo -c` passa
+
+### SUDO-002: Proibir ALL indevido para quem não for root ou wheel em sudoers
+
+- [ ] SUDO-002 audit não reprova `%wheel ALL=(ALL) ALL`, mas reprova `estagiario ALL=(ALL) ALL` na VM suja (`99-inseguro-ati`)
+- [ ] SUDO-002 enforce --apply corrige e o relatório mostra CORRIGIDO (comenta a linha com `# hardener: desativado: ` e modo 0440)
+- [ ] SUDO-002 segundo enforce --apply não altera nada
+- [ ] SUDO-002 rollback restaura o estado anterior
+- [ ] SUDO-002 nenhum serviço legítimo quebrou: `sudo -l` continua funcionando para o usuário de teste e `sudo visudo -c` passa
+
+## Pendentes: contas e privilégios (ACC-001, SUDO-003, PERM-001)
+
+- [ ] `demo/sujar_servidor.sh` executa apenas em ambiente com snapshot, emite aviso se `/etc/hardener-vm` não existir e NÃO cria o arquivo automaticamente.
+- [ ] PERM-001 audit identifica binário com bit SUID fora da baseline (ex.: `/usr/local/bin/suid_teste` criado por `demo/sujar_servidor.sh`).
+
+### ACC-001: UID 0 atribuído exclusivamente à conta root
+
+- [ ] ACC-001 audit reprova na VM se houver conta secundária com UID 0 (ex.: `toor_demo` criado por `demo/sujar_servidor.sh` em `/etc/passwd`)
+Nota: regra somente auditoria: os itens 2 a 5 não se aplicam, a correção é manual.
+
+### SUDO-003: Restringir membros do grupo wheel aos administradores autorizados
+
+- [ ] SUDO-003 audit reprova se usuário não homologado estiver em `wheel` (ex.: `ex_funcionario` colocado em `wheel` por `demo/sujar_servidor.sh`)
+- [ ] SUDO-003 enforce --apply corrige e o relatório mostra CORRIGIDO (remove membros indevidos via `gpasswd -d`)
+- [ ] SUDO-003 segundo enforce --apply não altera nada
+- [ ] SUDO-003 rollback restaura o estado anterior (`/etc/group` e `/etc/gshadow`)
+- [ ] SUDO-003 nenhum serviço legítimo quebrou: os administradores legítimos continuam com acesso ao sudo
 
 ## Pendentes: offboarding e revogação de acessos (OFF-001 a OFF-008)
 
-- [ ] A conta do operador (usuário em `SUDO_USER`) NUNCA é bloqueada; se não constar na lista de autorizados, o modo `--apply` recusa com `ErroOffboarding`.
-- [ ] SSH com chave autorizada real é RECUSADO após o offboarding da conta desligada (chave movida de `~/.ssh/authorized_keys` para `/var/backups/revoked_ssh_keys/`).
-- [ ] Conferir o formato de data do utilitário `lastlog` no RHEL 9 e confirmar compatibilidade com `relatorio_contas_inativas`.
-- [ ] Conferir o valor de `AuthorizedKeysFile` em `sshd -T` para assegurar que está no padrão `.ssh/authorized_keys`.
-- [ ] `loginctl terminate-user` encerra a sessão ativa do usuário desligado imediatamente; se falhar, o fallback via `pkill -9 -u` finaliza os processos.
-- [ ] OFF-001 a OFF-005 enforce --apply bloqueia a conta (`usermod -L`, `chage -E 0`), ajusta shell para `/sbin/nologin` e arquiva as chaves.
-- [ ] Segundo enforce --apply de offboarding não executa nenhuma ação nem cria nova pasta de backup.
-- [ ] OFF-006, OFF-007 e OFF-008 emitem relatórios detalhados sem alterar o estado do sistema.
+### OFF-001: Contas locais fora da lista bloqueadas e expiradas
+
+- [ ] OFF-001 audit reprova na VM suja com conta não autorizada ativa (`ex_funcionario`)
+- [ ] OFF-001 enforce --apply corrige e o relatório mostra CORRIGIDO (`usermod -L` e `chage -E 0`)
+- [ ] OFF-001 segundo enforce --apply não altera nada
+- [ ] OFF-001 rollback restaura o estado anterior
+- [ ] OFF-001 nenhum serviço legítimo quebrou: a conta do operador nunca é bloqueada
+
+### OFF-002: Shell nologin nas contas bloqueadas
+
+- [ ] OFF-002 audit reprova na VM suja com conta não autorizada possuindo shell interativo
+- [ ] OFF-002 enforce --apply corrige e o relatório mostra CORRIGIDO (`usermod -s /sbin/nologin`)
+- [ ] OFF-002 segundo enforce --apply não altera nada
+- [ ] OFF-002 rollback restaura o estado anterior
+- [ ] OFF-002 nenhum serviço legítimo quebrou: a conta do operador nunca é bloqueada
+
+### OFF-003: authorized_keys das contas bloqueadas arquivado
+
+- [ ] OFF-003 audit reprova na VM suja com arquivo `~/.ssh/authorized_keys` existente para conta não autorizada
+- [ ] OFF-003 enforce --apply corrige e o relatório mostra CORRIGIDO (chaves movidas para `/var/backups/revoked_ssh_keys/`)
+- [ ] OFF-003 segundo enforce --apply não altera nada
+- [ ] OFF-003 rollback restaura o estado anterior
+- [ ] OFF-003 nenhum serviço legítimo quebrou: SSH com chave real é recusado depois do offboarding (`ssh -i /root/ex_funcionario_demo_key ex_funcionario@localhost`) e a conta do operador nunca é bloqueada
+
+### OFF-004: Contas bloqueadas removidas do grupo wheel
+
+- [ ] OFF-004 audit reprova na VM suja com conta não autorizada presente no grupo `wheel`
+- [ ] OFF-004 enforce --apply corrige e o relatório mostra CORRIGIDO (`gpasswd -d wheel`)
+- [ ] OFF-004 segundo enforce --apply não altera nada
+- [ ] OFF-004 rollback restaura o estado anterior
+- [ ] OFF-004 nenhum serviço legítimo quebrou: a conta do operador nunca é bloqueada e administradores autorizados mantêm acesso ao sudo
+
+### OFF-005: Sessões ativas das contas bloqueadas encerradas
+
+- [ ] OFF-005 audit reprova na VM suja se houver sessão ativa da conta não autorizada no `loginctl`
+- [ ] OFF-005 enforce --apply corrige e o relatório mostra CORRIGIDO (`loginctl terminate-user` / fallback `pkill -9 -u`)
+- [ ] OFF-005 segundo enforce --apply não altera nada
+- [ ] OFF-005 rollback restaura o estado anterior
+- [ ] OFF-005 nenhum serviço legítimo quebrou: a sessão do operador nunca é encerrada nem bloqueada
+
+### OFF-006: Relatório de contas inativas
+
+- [ ] OFF-006 audit identifica contas regulares (UID >= 1000) inativas há mais de 90 dias ou que nunca logaram
+Nota: regra somente auditoria: os itens 2 a 5 não se aplicam, a correção é manual.
+- [ ] Conferir o formato de data do utilitário `lastlog` no RHEL 9 e confirmar compatibilidade com `relatorio_contas_inativas`
+
+### OFF-007: Relatório de senhas sem expiração
+
+- [ ] OFF-007 audit identifica contas com senha real sem expiração máxima configurada (campo 5 vazio ou 99999 em `/etc/shadow`)
+Nota: regra somente auditoria: os itens 2 a 5 não se aplicam, a correção é manual.
+
+### OFF-008: Relatório de chaves SSH sem dono
+
+- [ ] OFF-008 audit identifica arquivos `authorized_keys` de contas inexistentes, bloqueadas ou com shell nologin
+Nota: regra somente auditoria: os itens 2 a 5 não se aplicam, a correção é manual.
+- [ ] Conferir o valor de `AuthorizedKeysFile` em `sshd -T` para assegurar que está no padrão `.ssh/authorized_keys`
 
 ## Modelo para cada regra nova
 

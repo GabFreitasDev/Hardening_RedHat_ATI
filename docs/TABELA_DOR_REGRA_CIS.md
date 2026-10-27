@@ -24,6 +24,7 @@ Dores da ATI: 1 Ransomware · 2 Uploads · 3 Movimentação lateral · 4 Patches
 | PERM-003 | 6 | permissões de `/etc/shadow` | `permissao_arquivo` | A CONFIRMAR | implementada |
 | ACC-002 | 6 | umask padrão | `arquivo_chave_valor` | A CONFIRMAR | implementada |
 | PAM-001 | 6 | `faillock` configurado | `arquivo_chave_valor` | A CONFIRMAR | implementada |
+| PAM-001b | 6 | `faillock` tempo de desbloqueio (`unlock_time`) | `arquivo_chave_valor` | A CONFIRMAR | implementada |
 | PAM-002 | 6 | `pwquality` configurado | `arquivo_chave_valor` | A CONFIRMAR | implementada |
 | OFF-001 | 5 | contas locais fora da lista bloqueadas (`usermod -L`, `chage -E 0`) | `offboarding` | n/a (requisito da ATI) | implementada |
 | OFF-002 | 5 | shell `nologin` nas contas bloqueadas | `offboarding` | n/a | implementada |
