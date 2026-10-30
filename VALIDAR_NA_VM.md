@@ -109,7 +109,6 @@ Antes de começar: snapshot `base-limpa` feito, segunda sessão SSH aberta, `/et
 ## Pendentes: contas e privilégios (ACC-001, SUDO-003, PERM-001)
 
 - [ ] `demo/sujar_servidor.sh` executa apenas em ambiente com snapshot, emite aviso se `/etc/hardener-vm` não existir e NÃO cria o arquivo automaticamente.
-- [ ] PERM-001 audit identifica binário com bit SUID fora da baseline (ex.: `/usr/local/bin/suid_teste` criado por `demo/sujar_servidor.sh`).
 
 ### ACC-001: UID 0 atribuído exclusivamente à conta root
 
@@ -123,6 +122,15 @@ Nota: regra somente auditoria: os itens 2 a 5 não se aplicam, a correção é m
 - [ ] SUDO-003 segundo enforce --apply não altera nada
 - [ ] SUDO-003 rollback restaura o estado anterior (`/etc/group` e `/etc/gshadow`)
 - [ ] SUDO-003 nenhum serviço legítimo quebrou: os administradores legítimos continuam com acesso ao sudo
+
+### PERM-001: Arquivos com bits SUID/SGID auditados contra lista de referência
+
+- [ ] PERM-001 audit resulta em CONFORME na VM limpa (snapshot base-limpa) e NAO_CONFORME após a execução de `demo/sujar_servidor.sh`, listando o binário de teste (`/usr/local/bin/suid_teste`)
+- [ ] PERM-001 tempo do audit aceitável (varredura com os.walk/xdev sem travar o sistema)
+- [ ] PERM-001 a lista de permitidos bate com a saída de `find / -xdev -type f \( -perm -4000 -o -perm -2000 \) | sort` no RHEL 9.8 limpo
+- [ ] PERM-001 enforce mostra auditoria manual (regra sem correção automática) e não altera nada
+- [ ] PERM-001 nenhum serviço legítimo quebrou
+Nota: auditoria e lista de referência válidas para a VM RHEL 9.8 do Aluno C (regerar se mudar a plataforma ou pacotes instalados).
 
 ## Pendentes: offboarding e revogação de acessos (OFF-001 a OFF-008)
 

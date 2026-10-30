@@ -133,14 +133,49 @@
     modo: uid0_unico
   # somente_auditoria: true  # Aguarda definição/suporte do campo pelo Aluno A no motor
 
-# primitiva suid_sgid ainda não implementada: ativar quando existir e houver a lista de referência da VM limpa
-# - id: PERM-001
-#   descricao: Arquivos com bits SUID/SGID auditados contra lista de referência
-#   referencia: "CIS RHEL 9 - SUID/SGID (A CONFIRMAR o item no benchmark)"
-#   dor_ati: [6]
-#   severidade: media
-#   plataforma: rhel9
-#   primitiva: suid_sgid
+- id: PERM-001
+  descricao: Arquivos com bits SUID/SGID auditados contra lista de referência
+  referencia: "CIS RHEL 9 - SUID/SGID (A CONFIRMAR o item no benchmark)"
+  dor_ati: [6]
+  severidade: media
+  plataforma: rhel9
+  primitiva: suid_sgid
+  parametros:
+    # lista gerada na VM limpa RHEL 9.8 (snapshot base-limpa), antes do sujar_servidor.sh; /usr/bin/vmware-user-suid-wrapper vem do VMware: regenerar a lista se mudar a plataforma
+    permitidos:
+      - /usr/bin/at
+      - /usr/bin/chage
+      - /usr/bin/chfn
+      - /usr/bin/chsh
+      - /usr/bin/crontab
+      - /usr/bin/fusermount
+      - /usr/bin/fusermount3
+      - /usr/bin/gpasswd
+      - /usr/bin/locate
+      - /usr/bin/mount
+      - /usr/bin/newgrp
+      - /usr/bin/passwd
+      - /usr/bin/pkexec
+      - /usr/bin/su
+      - /usr/bin/sudo
+      - /usr/bin/umount
+      - /usr/bin/vmware-user-suid-wrapper
+      - /usr/bin/write
+      - /usr/libexec/dbus-1/dbus-daemon-launch-helper
+      - /usr/libexec/openssh/ssh-keysign
+      - /usr/libexec/sssd/krb5_child
+      - /usr/libexec/sssd/ldap_child
+      - /usr/libexec/sssd/proxy_child
+      - /usr/libexec/sssd/selinux_child
+      - /usr/libexec/utempter/utempter
+      - /usr/libexec/Xorg.wrap
+      - /usr/lib/polkit-1/polkit-agent-helper-1
+      - /usr/sbin/grub2-set-bootflag
+      - /usr/sbin/lockdev
+      - /usr/sbin/pam_timestamp_check
+      - /usr/sbin/unix_chkpwd
+      - /usr/sbin/userhelper
+  # somente_auditoria: true  # Aguarda definição/suporte do campo pelo Aluno A no motor
 
 # o offboarding roda pelo subcomando offboarding e pelo --autorizados do audit/enforce, não como regra YAML
 # - id: OFF-001

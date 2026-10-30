@@ -5,6 +5,7 @@ from hardener.checks.conta_usuario import ContaUsuario
 from hardener.checks.permissao_arquivo import PermissaoArquivo
 from hardener.checks.sshd_config import SshdConfig
 from hardener.checks.sudoers import Sudoers
+from hardener.checks.suid_sgid import SuidSgid
 
 REGISTRO: Dict[str, Primitiva] = {
     SshdConfig.nome: SshdConfig(),
@@ -12,6 +13,7 @@ REGISTRO: Dict[str, Primitiva] = {
     ArquivoChaveValor.nome: ArquivoChaveValor(),
     Sudoers.nome: Sudoers(),
     ContaUsuario.nome: ContaUsuario(),
+    SuidSgid.nome: SuidSgid(),
 }
 
 

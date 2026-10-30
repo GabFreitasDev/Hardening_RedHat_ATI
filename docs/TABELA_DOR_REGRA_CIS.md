@@ -19,7 +19,7 @@ Dores da ATI: 1 Ransomware · 2 Uploads · 3 Movimentação lateral · 4 Patches
 | SUDO-002 | 6 | sem `ALL` indevido em sudoers e `sudoers.d` | `sudoers` | A CONFIRMAR | implementada |
 | SUDO-003 | 6 | grupo `wheel` igual à lista autorizada | `conta_usuario` | A CONFIRMAR | implementada |
 | ACC-001 | 6 | UID 0 único | `conta_usuario` | A CONFIRMAR | implementada |
-| PERM-001 | 6 | SUID/SGID comparados com lista permitida | `suid_sgid` | A CONFIRMAR | pendente |
+| PERM-001 | 6 | SUID/SGID comparados com lista permitida | `suid_sgid` | A CONFIRMAR | implementada |
 | PERM-002 | 6 | permissões de `/etc/passwd` | `permissao_arquivo` | A CONFIRMAR | implementada |
 | PERM-003 | 6 | permissões de `/etc/shadow` | `permissao_arquivo` | A CONFIRMAR | implementada |
 | ACC-002 | 6 | umask padrão | `arquivo_chave_valor` | A CONFIRMAR | implementada |
