@@ -101,7 +101,7 @@ class SuidSgid(Primitiva):
 
                 sub_fisico = Path(dirpath) / d
                 try:
-                    st_dir = sub_fisico.stat(follow_symlinks=False)
+                    st_dir = os.stat(sub_fisico, follow_symlinks=False)
                 except (PermissionError, OSError):
                     erros_perm += 1
                     continue
@@ -117,7 +117,7 @@ class SuidSgid(Primitiva):
             for f in filenames:
                 caminho_fisico = Path(dirpath) / f
                 try:
-                    st = caminho_fisico.stat(follow_symlinks=False)
+                    st = os.stat(caminho_fisico, follow_symlinks=False)
                 except (PermissionError, OSError):
                     erros_perm += 1
                     continue
