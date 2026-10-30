@@ -51,12 +51,22 @@ def construir_parser() -> argparse.ArgumentParser:
     comum.add_argument("--raiz", type=Path, default=Path("/"), help="prefixo de caminhos (desenvolvimento/testes)")
     comum.add_argument("--json", type=Path, metavar="ARQ", help="grava também o relatório JSON neste arquivo")
 
+    # Parser auxiliar para audit e enforce (permite --autorizados opcional para enriquecer o relatório)
+    comum_audit_enforce = argparse.ArgumentParser(add_help=False, parents=[comum])
+    comum_audit_enforce.add_argument(
+        "--autorizados",
+        type=Path,
+        metavar="CSV",
+        default=None,
+        help="arquivo CSV de autorizados (opcional em audit/enforce)",
+    )
+
     sub.add_parser("validar", help="valida os YAML da política").add_argument(
         "--regras-dir", type=Path, default=REGRAS_PADRAO
     )
-    sub.add_parser("audit", parents=[comum], help="verifica a conformidade (não altera nada)")
+    sub.add_parser("audit", parents=[comum_audit_enforce], help="verifica a conformidade (não altera nada)")
 
-    enf = sub.add_parser("enforce", parents=[comum], help="corrige (dry-run por padrão)")
+    enf = sub.add_parser("enforce", parents=[comum_audit_enforce], help="corrige (dry-run por padrão)")
     grupo = enf.add_mutually_exclusive_group()
     grupo.add_argument("--dry-run", action="store_true", help="mostra o que mudaria (comportamento padrão)")
     grupo.add_argument("--apply", action="store_true", help="aplica as correções (somente na VM)")
