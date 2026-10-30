@@ -1,0 +1,43 @@
+# Regras de integridade do sistema, SELinux e serviços (Trilha C, dor 1).
+# Formato e campos: docs/CONTRATO.md
+#
+# O campo referencia contém "(A CONFIRMAR o item no benchmark)" até conferência.
+
+- id: SYS-001
+  descricao: Garantir SELinux em modo enforcing no runtime e na inicialização
+  referencia: "CIS RHEL 9 - SELinux em modo enforcing (A CONFIRMAR o item no benchmark)"
+  dor_ati: [1]
+  severidade: critica
+  plataforma: rhel9
+  primitiva: selinux
+  parametros:
+    modo: estado
+    esperado: enforcing
+
+- id: SYS-002
+  descricao: Auditar diretórios world-writable sem sticky bit e arquivos sem dono
+  referencia: "CIS RHEL 9 - Arquivos world-writable sem sticky bit (A CONFIRMAR o item no benchmark)"
+  dor_ati: [1]
+  severidade: media
+  plataforma: rhel9
+  primitiva: permissao_arquivo
+  parametros:
+    caminho: /tmp
+    auditar_world_writable: true
+    somente_auditoria: true
+  # somente_auditoria: true
+
+- id: SVC-001
+  descricao: Desativar serviços e sockets de comunicação inseguros legado
+  referencia: "CIS RHEL 9 - Desativar serviços inseguros (A CONFIRMAR o item no benchmark)"
+  dor_ati: [1]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: servico
+  parametros:
+    servicos_proibidos:
+      - telnet.socket
+      - rsh.socket
+      - rlogin.socket
+      - tftp.socket
+      - vsftpd.service

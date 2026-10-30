@@ -1,0 +1,49 @@
+# Regras de kernel e sysctl (Trilha C, dor 1 - proteção contra ransomware e exploração).
+# Formato e campos: docs/CONTRATO.md
+#
+# Atenção: no YAML, valores de sysctl (ex.: "0", "1", "2") SEMPRE entre aspas.
+# O campo referencia contém "(A CONFIRMAR o item no benchmark)" até conferência.
+
+- id: KRN-001
+  descricao: Habilitar ASLR completo (randomize_va_space)
+  referencia: "CIS RHEL 9 - Habilitar kernel.randomize_va_space (A CONFIRMAR o item no benchmark)"
+  dor_ati: [1]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: sysctl
+  parametros:
+    chave: kernel.randomize_va_space
+    valor: "2"
+
+- id: KRN-001b
+  descricao: Restringir acesso a ponteiros do kernel (kptr_restrict)
+  referencia: "CIS RHEL 9 - Habilitar kernel.kptr_restrict (A CONFIRMAR o item no benchmark)"
+  dor_ati: [1]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: sysctl
+  parametros:
+    chave: kernel.kptr_restrict
+    valor: "1"
+
+- id: KRN-001c
+  descricao: Restringir acesso ao buffer dmesg do kernel (dmesg_restrict)
+  referencia: "CIS RHEL 9 - Habilitar kernel.dmesg_restrict (A CONFIRMAR o item no benchmark)"
+  dor_ati: [1]
+  severidade: media
+  plataforma: rhel9
+  primitiva: sysctl
+  parametros:
+    chave: kernel.dmesg_restrict
+    valor: "1"
+
+- id: KRN-001d
+  descricao: Desabilitar core dumps para binários SUID (suid_dumpable)
+  referencia: "CIS RHEL 9 - Desabilitar fs.suid_dumpable (A CONFIRMAR o item no benchmark)"
+  dor_ati: [1]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: sysctl
+  parametros:
+    chave: fs.suid_dumpable
+    valor: "0"

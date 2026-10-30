@@ -1,0 +1,54 @@
+# Regras de segurança para diretórios de upload web (Trilha C, dor 2 - execução indevida em uploads).
+# Formato e campos: docs/CONTRATO.md
+#
+# Atenção: UPL-003 (montagem com noexec, nosuid, nodev) está em rules/mounts.yaml.
+# O campo referencia contém "(A CONFIRMAR)" até conferência.
+
+- id: UPL-001
+  descricao: Proibir permissão de execução em todos os arquivos de upload
+  referencia: "Requisito ATI - Sem bit de execução em arquivos de uploads (A CONFIRMAR)"
+  dor_ati: [2]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: permissao_arquivo
+  parametros:
+    caminho: /var/www/uploads
+    modo_max: "0640"
+    recursivo_arquivos: true
+    criar_se_ausente: true
+
+- id: UPL-002
+  descricao: Permissões e propriedade restritas para o diretório de uploads (/var/www/uploads)
+  referencia: "Requisito ATI - Permissões do diretório de upload (A CONFIRMAR)"
+  dor_ati: [2]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: permissao_arquivo
+  parametros:
+    caminho: /var/www/uploads
+    modo_max: "0750"
+    dono: root
+    grupo: apache
+    criar_se_ausente: true
+
+- id: UPL-004
+  descricao: Contexto SELinux sem permissão de execução de scripts em uploads (httpd_sys_rw_content_t)
+  referencia: "Requisito ATI - Contexto SELinux para uploads (A CONFIRMAR)"
+  dor_ati: [2]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: selinux
+  parametros:
+    modo: contexto_caminho
+    caminho: /var/www/uploads
+    tipo_esperado: httpd_sys_rw_content_t
+
+- id: UPL-005
+  descricao: Configuração do Apache proibindo execução de scripts no diretório de uploads
+  referencia: "Requisito ATI - Apache sem execução em uploads (A CONFIRMAR)"
+  dor_ati: [2]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: apache_upload
+  parametros:
+    diretorio: /var/www/uploads

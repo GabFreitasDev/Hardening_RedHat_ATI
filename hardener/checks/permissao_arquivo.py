@@ -58,12 +58,19 @@ class PermissaoArquivo(Primitiva):
         if not caminho or not str(caminho).strip():
             erros.append("parâmetro obrigatório ausente: caminho")
 
+        auditar_ww = bool(params.get("auditar_world_writable", False))
+        recursivo = bool(params.get("recursivo_arquivos", False))
+
         tem_propriedade = any(
             params.get(c) not in (None, "")
             for c in ("modo_max", "dono", "grupo")
-        )
+        ) or auditar_ww
+
         if not tem_propriedade:
             erros.append("ao menos um entre 'modo_max', 'dono' ou 'grupo' deve ser informado")
+
+        if recursivo and not params.get("modo_max"):
+            erros.append("recursivo_arquivos requer 'modo_max'")
 
         modo_max = params.get("modo_max")
         if modo_max not in (None, ""):
@@ -81,8 +88,71 @@ class PermissaoArquivo(Primitiva):
     def verificar(self, params: Dict[str, Any], ctx: Contexto) -> Verificacao:
         caminho_logico = str(params["caminho"])
         destino = ctx.caminho(caminho_logico)
+        criar_se_ausente = bool(params.get("criar_se_ausente", False))
+        recursivo_arquivos = bool(params.get("recursivo_arquivos", False))
+        auditar_ww = bool(params.get("auditar_world_writable", False))
+
         if not destino.exists():
+            if criar_se_ausente:
+                return Verificacao(
+                    conforme=False,
+                    atual="inexistente",
+                    esperado=str(params.get("modo_max") or "existente"),
+                    detalhe="caminho '%s' não existe" % caminho_logico,
+                )
             raise ErroPrimitiva("arquivo '%s' não existe" % caminho_logico)
+
+        # Auditoria world-writable sem sticky bit e sem dono (SYS-002)
+        if auditar_ww:
+            violacoes: List[str] = []
+            if destino.is_dir():
+                st_dir = destino.stat()
+                modo_dir = st_dir.st_mode & 0o7777
+                # world-writable (0o002) mas sem sticky bit (0o1000)
+                if (modo_dir & 0o002 != 0) and (modo_dir & 0o1000 == 0):
+                    violacoes.append("%s (diretório world-writable sem sticky bit)" % caminho_logico)
+
+                for raiz_sub, _, arquivos in os.walk(str(destino)):
+                    for nome_arq in arquivos:
+                        caminho_arq = os.path.join(raiz_sub, nome_arq)
+                        try:
+                            st = os.lstat(caminho_arq)
+                        except OSError:
+                            continue
+                        modo_arq = st.st_mode & 0o7777
+                        if (modo_arq & 0o002) != 0:
+                            violacoes.append("%s (arquivo world-writable)" % caminho_arq)
+                        if _obter_usuario(st.st_uid).isdigit():
+                            violacoes.append("%s (arquivo sem dono válido UID %d)" % (caminho_arq, st.st_uid))
+            conforme = (len(violacoes) == 0)
+            atual = "%d violação(ões)" % len(violacoes) if violacoes else "sem arquivos world-writable irregulares"
+            esperado = "nenhum arquivo world-writable sem sticky ou sem dono"
+            detalhe = "; ".join(violacoes[:5]) if violacoes else "diretórios conformes"
+            return Verificacao(conforme=conforme, atual=atual, esperado=esperado, detalhe=detalhe)
+
+        # Verificação recursiva de arquivos internos (UPL-001)
+        if recursivo_arquivos and destino.is_dir():
+            modo_max_val = int(str(params["modo_max"]).strip(), 8)
+            violacoes_rec: List[str] = []
+            total_arquivos = 0
+            for raiz_sub, _, arquivos in os.walk(str(destino)):
+                for nome_arq in arquivos:
+                    total_arquivos += 1
+                    caminho_arq = os.path.join(raiz_sub, nome_arq)
+                    try:
+                        st = os.stat(caminho_arq)
+                    except OSError:
+                        continue
+                    modo_arq = st.st_mode & 0o7777
+                    if (modo_arq & ~modo_max_val) != 0:
+                        rel = os.path.relpath(caminho_arq, str(destino))
+                        violacoes_rec.append("%s (modo %04o)" % (rel, modo_arq))
+
+            conforme = (len(violacoes_rec) == 0)
+            atual = "%d arquivo(s) irregulares de %d" % (len(violacoes_rec), total_arquivos)
+            esperado = "modo <= %04o em todos os arquivos" % modo_max_val
+            detalhe = "arquivos excedendo permissão: " + ", ".join(violacoes_rec[:5]) if violacoes_rec else "todos os arquivos em conformidade"
+            return Verificacao(conforme=conforme, atual=atual, esperado=esperado, detalhe=detalhe)
 
         try:
             stat_res = destino.stat()
@@ -126,6 +196,10 @@ class PermissaoArquivo(Primitiva):
 
     def descrever(self, params: Dict[str, Any]) -> str:
         caminho = params.get("caminho", "")
+        if params.get("auditar_world_writable"):
+            return "auditar arquivos world-writable e sem dono em %s" % caminho
+        if params.get("recursivo_arquivos"):
+            return "restringir permissões de arquivos internos em %s para modo <= %s" % (caminho, params.get("modo_max"))
         partes: List[str] = []
         if "modo_max" in params and params["modo_max"] not in (None, ""):
             modo_max_val = int(str(params["modo_max"]).strip(), 8)
@@ -139,8 +213,43 @@ class PermissaoArquivo(Primitiva):
     def corrigir(self, params: Dict[str, Any], ctx: Contexto) -> List[str]:
         caminho_logico = str(params["caminho"])
         destino = ctx.caminho(caminho_logico)
+        criar_se_ausente = bool(params.get("criar_se_ausente", False))
+        recursivo_arquivos = bool(params.get("recursivo_arquivos", False))
+        auditar_ww = bool(params.get("auditar_world_writable", False))
+
+        if auditar_ww:
+            raise ErroPrimitiva("sem correção automática: auditar e corrigir arquivos world-writable manualmente")
+
+        mudancas: List[str] = []
+
         if not destino.exists():
-            raise ErroPrimitiva("arquivo '%s' não existe" % caminho_logico)
+            if criar_se_ausente:
+                destino.mkdir(parents=True, exist_ok=True)
+                mudancas.append("criado diretório %s" % caminho_logico)
+            else:
+                raise ErroPrimitiva("arquivo '%s' não existe" % caminho_logico)
+
+        # Correção recursiva de arquivos internos (UPL-001)
+        if recursivo_arquivos and destino.is_dir():
+            modo_max_val = int(str(params["modo_max"]).strip(), 8)
+            for raiz_sub, _, arquivos in os.walk(str(destino)):
+                for nome_arq in arquivos:
+                    caminho_arq = os.path.join(raiz_sub, nome_arq)
+                    try:
+                        st = os.stat(caminho_arq)
+                    except OSError:
+                        continue
+                    modo_arq = st.st_mode & 0o7777
+                    if (modo_arq & ~modo_max_val) != 0:
+                        novo_modo = modo_arq & modo_max_val
+                        rel = os.path.relpath(caminho_arq, str(ctx.raiz))
+                        ctx.salvar_antes_de_alterar("/" + rel.lstrip("/"))
+                        try:
+                            os.chmod(caminho_arq, novo_modo)
+                            mudancas.append("modo alterado de %04o para %04o em %s" % (modo_arq, novo_modo, nome_arq))
+                        except OSError as e:
+                            raise ErroPrimitiva("falha ao alterar permissões de %s: %s" % (caminho_arq, e))
+            return mudancas
 
         try:
             stat_res = destino.stat()
@@ -165,12 +274,11 @@ class PermissaoArquivo(Primitiva):
         precisa_grupo = grupo not in (None, "") and grupo_atual != str(grupo)
 
         if not precisa_modo and not precisa_dono and not precisa_grupo:
-            return []
+            return mudancas
 
-        # Salva no backup antes de realizar qualquer alteração
-        ctx.salvar_antes_de_alterar(caminho_logico)
-
-        mudancas: List[str] = []
+        # Salva no backup antes de realizar qualquer alteração (apenas se for arquivo regular)
+        if not destino.is_dir():
+            ctx.salvar_antes_de_alterar(caminho_logico)
 
         if precisa_modo:
             try:
@@ -193,3 +301,4 @@ class PermissaoArquivo(Primitiva):
                 raise ErroPrimitiva("falha ao alterar dono/grupo de %s: %s" % (caminho_logico, e))
 
         return mudancas
+
