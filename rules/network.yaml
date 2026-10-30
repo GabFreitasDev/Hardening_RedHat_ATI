@@ -4,6 +4,32 @@
 # Atenção: no YAML, valores de sysctl (ex.: "0", "1") SEMPRE entre aspas.
 # O campo referencia contém "(A CONFIRMAR o item no benchmark)" até conferência.
 
+- id: NET-001
+  descricao: Firewalld ativo com serviços e portas estritamente autorizados
+  referencia: "CIS RHEL 9 - Firewalld serviços permitidos (A CONFIRMAR o item no benchmark)"
+  dor_ati: [3]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: firewalld
+  parametros:
+    servicos_permitidos:
+      - ssh
+    portas_permitidas: []
+
+- id: NET-002
+  descricao: Portas de escuta na rede restritas aos serviços autorizados
+  referencia: "CIS RHEL 9 - Portas em escuta na rede (A CONFIRMAR o item no benchmark)"
+  dor_ati: [3]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: portas_escuta
+  parametros:
+    portas_autorizadas:
+      - 22
+    ignorar_loopback: true
+    somente_auditoria: true
+  # somente_auditoria: true
+
 - id: NET-004
   descricao: Desabilitar encaminhamento de pacotes IPv4 (ip_forward)
   referencia: "CIS RHEL 9 - Desabilitar net.ipv4.ip_forward (A CONFIRMAR o item no benchmark)"

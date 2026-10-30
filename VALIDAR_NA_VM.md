@@ -239,6 +239,43 @@ Nota: regra somente auditoria: os itens 2 a 5 não se aplicam, a correção é m
 - [ ] Testar na VM: criar script em `/tmp` ou `/var/www/uploads`, dar `chmod +x` e tentar executar; deve retornar `Permission denied` devido a `noexec`
 - [ ] Nenhum serviço essencial do sistema (ex.: dnf, systemd, sshd) quebrou com as restrições de montagem
 
+## Pendentes: Trilha C - Firewall e Portas (NET-001, NET-002)
+
+- [ ] NET-001 audit reprova na VM suja com porta 8080/tcp ou serviço cockpit abertos
+- [ ] NET-001 enforce --apply remove portas e serviços não autorizados no firewalld e recarrega
+- [ ] NET-001 segundo enforce --apply não altera nada
+- [ ] NET-001 portas autorizadas (ex.: SSH) continuam acessíveis
+- [ ] NET-002 audit identifica processos e portas em escuta na rede externa (ex.: 8080/tcp)
+Nota: regra somente auditoria: correção é manual encerrando o serviço excedente.
+
+## Pendentes: Trilha C - SELinux, Serviços e Permissões Críticas (SYS-001, SYS-002, SVC-001)
+
+- [ ] SYS-001 audit reprova na VM suja com `SELinux em Permissive`
+- [ ] SYS-001 enforce --apply corrige (`setenforce 1` e `SELINUX=enforcing` em `/etc/selinux/config`)
+- [ ] SYS-001 segundo enforce --apply não altera nada
+- [ ] SYS-001 rollback restaura o estado anterior
+- [ ] SYS-002 audit identifica arquivos world-writable sem sticky bit ou sem dono em `/tmp`
+Nota: regra somente auditoria: correção é manual.
+- [ ] SVC-001 audit reprova se telnet, rsh ou vsftpd estiverem ativos ou habilitados
+- [ ] SVC-001 enforce --apply desabilita e encerra os serviços (`systemctl disable --now`)
+- [ ] SVC-001 segundo enforce --apply não altera nada
+
+## Pendentes: Trilha C - Proteção de Uploads Web (UPL-001, UPL-002, UPL-004, UPL-005)
+
+- [ ] UPL-001 audit reprova na VM suja se arquivos em `/var/www/uploads` possuírem bit de execução (ex.: `0755`)
+- [ ] UPL-001 enforce --apply remove os bits de execução recursivamente (aplicando modo `0640`)
+- [ ] UPL-001 segundo enforce --apply não altera nada
+- [ ] UPL-002 audit reprova se `/var/www/uploads` tiver permissão `0777` ou dono incorreto
+- [ ] UPL-002 enforce --apply ajusta para modo `0750` e dono/grupo `root:apache`
+- [ ] UPL-002 segundo enforce --apply não altera nada
+- [ ] UPL-004 audit reprova se contexto SELinux não for `httpd_sys_rw_content_t`
+- [ ] UPL-004 enforce --apply aplica `chcon -R -t httpd_sys_rw_content_t /var/www/uploads`
+- [ ] UPL-004 segundo enforce --apply não altera nada
+- [ ] UPL-005 audit reprova se `/etc/httpd/conf.d/hardener-uploads.conf` estiver ausente
+- [ ] UPL-005 enforce --apply cria a configuração do Apache com `-ExecCGI -Indexes -Includes` e `AllowOverride None`
+- [ ] UPL-005 segundo enforce --apply não altera nada
+- [ ] UPL-005 rollback restaura ou remove o arquivo de configuração
+
 ## Modelo para cada regra nova
 
 ```

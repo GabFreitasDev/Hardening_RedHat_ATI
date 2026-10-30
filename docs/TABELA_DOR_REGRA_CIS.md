@@ -41,8 +41,8 @@ Limite declarado: identidades em AD/LDAP são revogadas no diretório, não no h
 
 | ID | Dor | Regra | Primitiva | CIS | Status |
 |---|---|---|---|---|---|
-| NET-001 | 3 | firewalld com zona restritiva e só os serviços declarados | `firewalld` | A CONFIRMAR | pendente |
-| NET-002 | 3 | portas em escuta comparadas com a lista autorizada | `portas_escuta` | A CONFIRMAR | pendente |
+| NET-001 | 3 | firewalld com zona restritiva e só os serviços declarados | `firewalld` | A CONFIRMAR | implementada |
+| NET-002 | 3 | portas em escuta comparadas com a lista autorizada | `portas_escuta` | A CONFIRMAR | implementada |
 | NET-003 | 3 | `AllowGroups` no SSH | `sshd_config` | A CONFIRMAR | implementada |
 | NET-004 | 3 | `net.ipv4.ip_forward` | `sysctl` | A CONFIRMAR | implementada |
 | NET-005 | 3 | redirects (`accept_redirects`, `send_redirects`) | `sysctl` | A CONFIRMAR | implementada |
@@ -50,15 +50,15 @@ Limite declarado: identidades em AD/LDAP são revogadas no diretório, não no h
 | MNT-001 | 1 | `/tmp` com `noexec,nosuid,nodev` | `montagem` | A CONFIRMAR | implementada |
 | MNT-002 | 1 | `/var/tmp` com `noexec,nosuid,nodev` | `montagem` | A CONFIRMAR | implementada |
 | MNT-003 | 1 | `/dev/shm` com `noexec,nosuid,nodev` | `montagem` | A CONFIRMAR | implementada |
-| SYS-001 | 1 | SELinux em `enforcing` | `selinux` | A CONFIRMAR | pendente |
-| SYS-002 | 1 | arquivos world-writable sem sticky bit e sem dono | `permissao_arquivo` | A CONFIRMAR | pendente |
-| SVC-001 | 1 | serviços inseguros desativados (telnet, rsh, tftp...) | `servico` | A CONFIRMAR | pendente |
+| SYS-001 | 1 | SELinux em `enforcing` | `selinux` | A CONFIRMAR | implementada |
+| SYS-002 | 1 | arquivos world-writable sem sticky bit e sem dono | `permissao_arquivo` | A CONFIRMAR | implementada |
+| SVC-001 | 1 | serviços inseguros desativados (telnet, rsh, tftp...) | `servico` | A CONFIRMAR | implementada |
 | KRN-001 | 1 | sysctl de kernel (`randomize_va_space`, `kptr_restrict`, `dmesg_restrict`, `fs.suid_dumpable`) | `sysctl` | A CONFIRMAR | implementada |
-| UPL-001 | 2 | diretórios de upload sem bit de execução | `permissao_arquivo` | n/a (requisito da ATI) | pendente |
-| UPL-002 | 2 | dono e modo corretos nos diretórios de upload | `permissao_arquivo` | n/a | pendente |
+| UPL-001 | 2 | diretórios de upload sem bit de execução | `permissao_arquivo` | n/a (requisito da ATI) | implementada |
+| UPL-002 | 2 | dono e modo corretos nos diretórios de upload | `permissao_arquivo` | n/a | implementada |
 | UPL-003 | 2 | montagem separada `noexec,nosuid,nodev` (ou fora do webroot) | `montagem` | n/a (requisito da ATI) | implementada |
-| UPL-004 | 2 | contexto SELinux sem permissão de execução | `selinux` | n/a | pendente |
-| UPL-005 | 2 | Apache sem executar scripts no caminho (desejável) | a definir | n/a | pendente |
+| UPL-004 | 2 | contexto SELinux sem permissão de execução | `selinux` | n/a | implementada |
+| UPL-005 | 2 | Apache sem executar scripts no caminho (desejável) | `apache_upload` | n/a | implementada |
 
 Os diretórios de upload são **declarados na política** (ainda não existe o formato; propor em `rules/uploads.yaml`).
 Limites declarados: nenhuma configuração bloqueia ransomware sozinha, e a ferramenta não inspeciona o

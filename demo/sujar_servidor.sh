@@ -114,7 +114,7 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 9. Dor 1: SELinux em modo Permissive (se selinux estiver ativo)
+# 9. Dor 1: SELinux em modo Permissive (SYS-001)
 # ------------------------------------------------------------------------------
 if command -v setenforce &>/dev/null; then
   setenforce 0 || true
@@ -124,22 +124,49 @@ if [ -f /etc/selinux/config ]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 10. Dor 2: Diretório de uploads inseguro com permissão de execução
+# 10. Dor 2: Diretório de uploads inseguro com permissão de execução e sem proteção Apache (UPL-001 a UPL-005)
 # ------------------------------------------------------------------------------
 mkdir -p /var/www/uploads
 chmod 0777 /var/www/uploads
-printf '#!/bin/bash\necho "Executavel malicioso"\n' > /var/www/uploads/shell.sh
-chmod +x /var/www/uploads/shell.sh
+printf '#!/bin/bash\necho "Executavel malicioso em uploads"\n' > /var/www/uploads/shell.sh
+printf '#!/bin/bash\necho "Script de teste"\n' > /var/www/uploads/teste_script.sh
+chmod 0755 /var/www/uploads/shell.sh || true
+chmod 0755 /var/www/uploads/teste_script.sh || true
+if command -v chcon &>/dev/null; then
+  chcon -t httpd_sys_script_exec_t /var/www/uploads/teste_script.sh 2>/dev/null || \
+  chcon -t default_t /var/www/uploads/teste_script.sh 2>/dev/null || true
+fi
+# Remove arquivo de bloqueio do Apache se existir
+rm -f /etc/httpd/conf.d/hardener-uploads.conf 2>/dev/null || true
 
 # ------------------------------------------------------------------------------
-# 11. Dor 3: Desativar proteções de rede do kernel no sysctl
+# 11. Dor 3 / Dor 1: Sysctl inseguro para Rede e Kernel (NET-004 a NET-006, KRN-001)
 # ------------------------------------------------------------------------------
 sysctl -w net.ipv4.ip_forward=1 2>/dev/null || true
 sysctl -w net.ipv4.conf.all.accept_redirects=1 2>/dev/null || true
+sysctl -w net.ipv4.conf.all.send_redirects=1 2>/dev/null || true
+sysctl -w net.ipv4.conf.all.rp_filter=0 2>/dev/null || true
+sysctl -w net.ipv4.conf.all.log_martians=0 2>/dev/null || true
 sysctl -w kernel.randomize_va_space=0 2>/dev/null || true
+sysctl -w kernel.kptr_restrict=0 2>/dev/null || true
+sysctl -w kernel.dmesg_restrict=0 2>/dev/null || true
+sysctl -w fs.suid_dumpable=1 2>/dev/null || true
+
+# Afrouxa ou remove arquivo de persistência do hardener se existir
+rm -f /etc/sysctl.d/99-hardener.conf 2>/dev/null || true
 
 # ------------------------------------------------------------------------------
-# 12. Checagem do marcador de VM (trava de segurança: criada manualmente pelo operador)
+# 12. Dor 3: Porta não autorizada no Firewall (NET-001)
+# ------------------------------------------------------------------------------
+if command -v firewall-cmd &>/dev/null; then
+  if firewall-cmd --state &>/dev/null; then
+    firewall-cmd --add-port=8080/tcp 2>/dev/null || true
+    firewall-cmd --add-service=cockpit 2>/dev/null || true
+  fi
+fi
+
+# ------------------------------------------------------------------------------
+# 13. Checagem do marcador de VM (trava de segurança: criada manualmente pelo operador)
 # ------------------------------------------------------------------------------
 if [ ! -f /etc/hardener-vm ]; then
   echo ""
@@ -151,7 +178,7 @@ fi
 echo ""
 echo "=============================================================================="
 echo "[OK] Servidor RHEL 9 preparado com as violações de teste:"
-echo "  1. SSH-001/002: PermitRootLogin yes e permissão 0644 em /etc/ssh/sshd_config"
+echo "  1. SSH-001/002/NET-003: PermitRootLogin yes, permissão 0644 e sem AllowGroups"
 echo "  2. SUDO-001/002: NOPASSWD indevido para %wheel e estagiario em /etc/sudoers.d/99-inseguro-ati"
 echo "  3. ACC-001: Usuário 'toor_demo' com UID 0 duplicado em /etc/passwd"
 echo "  4. SUDO-003: Usuário 'ex_funcionario' adicionado como membro extra do grupo wheel"
@@ -161,9 +188,10 @@ echo "  7. PERM-001: Executável com bit SUID (/usr/local/bin/suid_teste 4755)"
 echo "  8. PAM-001/001b: deny=0 e unlock_time=0 em /etc/security/faillock.conf"
 echo "  9. PAM-002: minlen=6 em /etc/security/pwquality.conf"
 echo " 10. ACC-002: UMASK 022 frouxo em /etc/login.defs"
-echo " 11. SELINUX=permissive em /etc/selinux/config (se presente)"
-echo " 12. /var/www/uploads com permissão 0777 e shell executável"
-echo " 13. Proteções de kernel sysctl desativadas (ip_forward, accept_redirects, va_space)"
+echo " 11. SYS-001: SELINUX=permissive em /etc/selinux/config e runtime"
+echo " 12. UPL-001..005: /var/www/uploads com 0777, scripts executáveis e sem proteção Apache"
+echo " 13. NET-004..006 / KRN-001: Sysctl inseguro (ip_forward, redirects, rp_filter, ASLR, kptr)"
+echo " 14. NET-001: Portas e serviços extras abertos no firewalld (8080/tcp, cockpit)"
 echo "=============================================================================="
 echo "Execute agora na VM:"
 echo "  python3 -m hardener audit"
@@ -171,3 +199,4 @@ echo "  python3 -m hardener enforce"
 echo "  sudo python3 -m hardener enforce --apply"
 echo "Para testar o acesso SSH de ex_funcionario antes e depois do offboarding:"
 echo "  ssh -i /root/ex_funcionario_demo_key ex_funcionario@localhost"
+
