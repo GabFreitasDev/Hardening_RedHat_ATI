@@ -191,6 +191,54 @@ Nota: regra somente auditoria: os itens 2 a 5 não se aplicam, a correção é m
 Nota: regra somente auditoria: os itens 2 a 5 não se aplicam, a correção é manual.
 - [ ] Conferir o valor de `AuthorizedKeysFile` em `sshd -T` para assegurar que está no padrão `.ssh/authorized_keys`
 
+## Pendentes: Trilha C - Acesso SSH restrito (NET-003)
+
+- [ ] NET-003 audit reprova na VM suja sem AllowGroups configurado em sshd
+- [ ] NET-003 enforce --apply corrige e o relatório mostra CORRIGIDO (AllowGroups wheel em 00-hardener.conf)
+- [ ] NET-003 segundo enforce --apply não altera nada
+- [ ] NET-003 rollback restaura o estado anterior
+- [ ] NET-003 usuários do grupo wheel continuam acessando via SSH e usuários fora de wheel são rejeitados
+
+## Pendentes: Trilha C - Parâmetros de rede e kernel via sysctl (NET-004 a NET-006, KRN-001)
+
+### NET-004 a NET-006: Sysctl de Rede
+- [ ] NET-004 audit reprova na VM suja com `net.ipv4.ip_forward = 1`
+- [ ] NET-004 enforce --apply corrige (relatório mostra CORRIGIDO, valor 0 persistido em `/etc/sysctl.d/99-hardener.conf` e aplicado via `sysctl -w`)
+- [ ] NET-004 segundo enforce --apply não altera nada
+- [ ] NET-004 rollback restaura o estado anterior
+- [ ] NET-005 / NET-005b audit reprova com redirects habilitados (`accept_redirects = 1`, `send_redirects = 1`)
+- [ ] NET-005 / NET-005b enforce --apply corrige (`accept_redirects = 0`, `send_redirects = 0`)
+- [ ] NET-005 / NET-005b segundo enforce --apply não altera nada
+- [ ] NET-005 / NET-005b rollback restaura o estado anterior
+- [ ] NET-006 / NET-006b audit reprova com rp_filter e log_martians desabilitados (valor 0)
+- [ ] NET-006 / NET-006b enforce --apply corrige (valor 1)
+- [ ] NET-006 / NET-006b segundo enforce --apply não altera nada
+- [ ] NET-006 / NET-006b rollback restaura o estado anterior
+- [ ] Nenhuma quebra de conectividade de rede legítima após aplicação das regras
+
+### KRN-001 a KRN-001d: Sysctl de Kernel
+- [ ] KRN-001 audit reprova na VM suja com `kernel.randomize_va_space < 2`
+- [ ] KRN-001 enforce --apply corrige (`kernel.randomize_va_space = 2`)
+- [ ] KRN-001b audit reprova na VM suja com `kernel.kptr_restrict = 0`
+- [ ] KRN-001b enforce --apply corrige (`kernel.kptr_restrict = 1`)
+- [ ] KRN-001c audit reprova com `kernel.dmesg_restrict = 0` e enforce corrige para 1
+- [ ] KRN-001d audit reprova com `fs.suid_dumpable != 0` e enforce corrige para 0
+- [ ] KRN-001 (todos) segundo enforce --apply não altera nada
+- [ ] KRN-001 (todos) rollback restaura o estado anterior
+
+## Pendentes: Trilha C - Opções de montagem (MNT-001 a MNT-003, UPL-003)
+
+- [ ] MNT-001 audit reprova se `/tmp` estiver montado sem `noexec,nosuid,nodev` ou ausente no `/etc/fstab`
+- [ ] MNT-001 enforce --apply adiciona entrada tmpfs ou opções no `/etc/fstab` e remonta com sucesso
+- [ ] MNT-001 segundo enforce --apply não altera nada
+- [ ] MNT-001 rollback restaura o `/etc/fstab` anterior
+- [ ] MNT-002 audit reprova se `/var/tmp` estiver sem `noexec,nosuid,nodev` e enforce --apply corrige
+- [ ] MNT-003 audit reprova se `/dev/shm` estiver sem `noexec,nosuid,nodev` e enforce --apply corrige
+- [ ] UPL-003 audit reprova se diretório `/var/www/uploads` não possuir montagem dedicada com `noexec,nosuid,nodev`
+- [ ] UPL-003 enforce --apply cria o diretório (se inexistente), insere bind mount com opções restritivas no `/etc/fstab` e remonta
+- [ ] Testar na VM: criar script em `/tmp` ou `/var/www/uploads`, dar `chmod +x` e tentar executar; deve retornar `Permission denied` devido a `noexec`
+- [ ] Nenhum serviço essencial do sistema (ex.: dnf, systemd, sshd) quebrou com as restrições de montagem
+
 ## Modelo para cada regra nova
 
 ```

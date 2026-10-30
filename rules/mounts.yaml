@@ -1,1 +1,61 @@
+# Regras de montagem e restrições de execução (Trilha C, dores 1 e 2).
+# Formato e campos: docs/CONTRATO.md
+#
+# Atenção: listas de opções e caminhos no YAML sempre devidamente formatados.
+# O campo referencia contém "(A CONFIRMAR o item no benchmark)" até conferência.
 
+- id: MNT-001
+  descricao: Opções de montagem restritivas para /tmp (noexec, nosuid, nodev)
+  referencia: "CIS RHEL 9 - Opções de montagem para /tmp (A CONFIRMAR o item no benchmark)"
+  dor_ati: [1]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: montagem
+  parametros:
+    ponto: /tmp
+    opcoes:
+      - noexec
+      - nosuid
+      - nodev
+
+- id: MNT-002
+  descricao: Opções de montagem restritivas para /var/tmp (noexec, nosuid, nodev)
+  referencia: "CIS RHEL 9 - Opções de montagem para /var/tmp (A CONFIRMAR o item no benchmark)"
+  dor_ati: [1]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: montagem
+  parametros:
+    ponto: /var/tmp
+    opcoes:
+      - noexec
+      - nosuid
+      - nodev
+
+- id: MNT-003
+  descricao: Opções de montagem restritivas para /dev/shm (noexec, nosuid, nodev)
+  referencia: "CIS RHEL 9 - Opções de montagem para /dev/shm (A CONFIRMAR o item no benchmark)"
+  dor_ati: [1]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: montagem
+  parametros:
+    ponto: /dev/shm
+    opcoes:
+      - noexec
+      - nosuid
+      - nodev
+
+- id: UPL-003
+  descricao: Opções de montagem restritivas para diretório de upload /var/www/uploads
+  referencia: "Requisito ATI - Diretório de upload com montagem restrita (A CONFIRMAR)"
+  dor_ati: [2]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: montagem
+  parametros:
+    ponto: /var/www/uploads
+    opcoes:
+      - noexec
+      - nosuid
+      - nodev

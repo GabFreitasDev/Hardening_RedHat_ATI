@@ -31,3 +31,16 @@
     grupo: root
   # valores a confirmar na VM com stat -c '%a %U:%G' e no benchmark
 
+- id: NET-003
+  descricao: Restringir acesso SSH ao grupo wheel via AllowGroups
+  referencia: "CIS RHEL 9 - SSH AllowGroups (A CONFIRMAR o item no benchmark)"
+  dor_ati: [3]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: sshd_config
+  parametros:
+    chave: AllowGroups
+    valor: "wheel"
+  recarregar: sshd
+
+

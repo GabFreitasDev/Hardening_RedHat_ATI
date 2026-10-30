@@ -1,0 +1,60 @@
+# Regras de rede e sysctl (Trilha C, dor 3 - contenção de movimentação lateral).
+# Formato e campos: docs/CONTRATO.md
+#
+# Atenção: no YAML, valores de sysctl (ex.: "0", "1") SEMPRE entre aspas.
+# O campo referencia contém "(A CONFIRMAR o item no benchmark)" até conferência.
+
+- id: NET-004
+  descricao: Desabilitar encaminhamento de pacotes IPv4 (ip_forward)
+  referencia: "CIS RHEL 9 - Desabilitar net.ipv4.ip_forward (A CONFIRMAR o item no benchmark)"
+  dor_ati: [3]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: sysctl
+  parametros:
+    chave: net.ipv4.ip_forward
+    valor: "0"
+
+- id: NET-005
+  descricao: Desabilitar recebimento de ICMP redirects IPv4 (accept_redirects)
+  referencia: "CIS RHEL 9 - Desabilitar net.ipv4.conf.all.accept_redirects (A CONFIRMAR o item no benchmark)"
+  dor_ati: [3]
+  severidade: media
+  plataforma: rhel9
+  primitiva: sysctl
+  parametros:
+    chave: net.ipv4.conf.all.accept_redirects
+    valor: "0"
+
+- id: NET-005b
+  descricao: Desabilitar envio de ICMP redirects IPv4 (send_redirects)
+  referencia: "CIS RHEL 9 - Desabilitar net.ipv4.conf.all.send_redirects (A CONFIRMAR o item no benchmark)"
+  dor_ati: [3]
+  severidade: media
+  plataforma: rhel9
+  primitiva: sysctl
+  parametros:
+    chave: net.ipv4.conf.all.send_redirects
+    valor: "0"
+
+- id: NET-006
+  descricao: Habilitar validação de caminho reverso IPv4 (rp_filter)
+  referencia: "CIS RHEL 9 - Habilitar net.ipv4.conf.all.rp_filter (A CONFIRMAR o item no benchmark)"
+  dor_ati: [3]
+  severidade: media
+  plataforma: rhel9
+  primitiva: sysctl
+  parametros:
+    chave: net.ipv4.conf.all.rp_filter
+    valor: "1"
+
+- id: NET-006b
+  descricao: Habilitar log de pacotes com endereços suspeitos (log_martians)
+  referencia: "CIS RHEL 9 - Habilitar net.ipv4.conf.all.log_martians (A CONFIRMAR o item no benchmark)"
+  dor_ati: [3]
+  severidade: media
+  plataforma: rhel9
+  primitiva: sysctl
+  parametros:
+    chave: net.ipv4.conf.all.log_martians
+    valor: "1"
