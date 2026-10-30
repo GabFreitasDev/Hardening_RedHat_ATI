@@ -14,24 +14,26 @@ Dores da ATI: 1 Ransomware · 2 Uploads · 3 Movimentação lateral · 4 Patches
 | ID | Dor | Regra | Primitiva | CIS | Status |
 |---|---|---|---|---|---|
 | SSH-001 | 6 | `PermitRootLogin no` | `sshd_config` | A CONFIRMAR | implementada (exemplo) |
-| SSH-002 | 6 | permissões de `/etc/ssh/sshd_config` | `permissao_arquivo` | A CONFIRMAR | pendente |
-| SUDO-001 | 6 | sem `NOPASSWD` indevido em sudoers e `sudoers.d` | `sudoers` | A CONFIRMAR | pendente |
-| SUDO-002 | 6 | sem `ALL` indevido em sudoers e `sudoers.d` | `sudoers` | A CONFIRMAR | pendente |
-| SUDO-003 | 6 | grupo `wheel` igual à lista autorizada | `conta_usuario` | A CONFIRMAR | pendente |
-| ACC-001 | 6 | UID 0 único | `conta_usuario` | A CONFIRMAR | pendente |
-| PERM-001 | 6 | SUID/SGID comparados com lista permitida | `suid_sgid` | A CONFIRMAR | pendente |
-| PERM-002 | 6 | permissões de `/etc/shadow` e `/etc/passwd` | `permissao_arquivo` | A CONFIRMAR | pendente |
-| ACC-002 | 6 | umask padrão | a definir | A CONFIRMAR | pendente |
-| PAM-001 | 6 | `faillock` configurado | `pam_faillock` | A CONFIRMAR | pendente |
-| PAM-002 | 6 | `pwquality` configurado | `pam_pwquality` | A CONFIRMAR | pendente |
-| OFF-001 | 5 | contas locais fora da lista bloqueadas (`usermod -L`, `chage -E 0`) | `offboarding` | n/a (requisito da ATI) | pendente |
-| OFF-002 | 5 | shell `nologin` nas contas bloqueadas | `offboarding` | n/a | pendente |
-| OFF-003 | 5 | `authorized_keys` das contas bloqueadas arquivado | `offboarding` | n/a | pendente |
-| OFF-004 | 5 | contas bloqueadas removidas de `wheel` | `offboarding` | n/a | pendente |
-| OFF-005 | 5 | sessões ativas das contas bloqueadas encerradas | `offboarding` | n/a | pendente |
-| OFF-006 | 5 | relatório de contas inativas | `offboarding` | A CONFIRMAR | pendente |
-| OFF-007 | 5 | relatório de senhas sem expiração | `offboarding` | A CONFIRMAR | pendente |
-| OFF-008 | 5 | relatório de chaves SSH sem dono | `offboarding` | n/a | pendente |
+| SSH-002 | 6 | permissões de `/etc/ssh/sshd_config` | `permissao_arquivo` | A CONFIRMAR | implementada |
+| SUDO-001 | 6 | sem `NOPASSWD` indevido em sudoers e `sudoers.d` | `sudoers` | A CONFIRMAR | implementada |
+| SUDO-002 | 6 | sem `ALL` indevido em sudoers e `sudoers.d` | `sudoers` | A CONFIRMAR | implementada |
+| SUDO-003 | 6 | grupo `wheel` igual à lista autorizada | `conta_usuario` | A CONFIRMAR | implementada |
+| ACC-001 | 6 | UID 0 único | `conta_usuario` | A CONFIRMAR | implementada |
+| PERM-001 | 6 | SUID/SGID comparados com lista permitida | `suid_sgid` | A CONFIRMAR | implementada |
+| PERM-002 | 6 | permissões de `/etc/passwd` | `permissao_arquivo` | A CONFIRMAR | implementada |
+| PERM-003 | 6 | permissões de `/etc/shadow` | `permissao_arquivo` | A CONFIRMAR | implementada |
+| ACC-002 | 6 | umask padrão | `arquivo_chave_valor` | A CONFIRMAR | implementada |
+| PAM-001 | 6 | `faillock` configurado | `arquivo_chave_valor` | A CONFIRMAR | implementada |
+| PAM-001b | 6 | `faillock` tempo de desbloqueio (`unlock_time`) | `arquivo_chave_valor` | A CONFIRMAR | implementada |
+| PAM-002 | 6 | `pwquality` configurado | `arquivo_chave_valor` | A CONFIRMAR | implementada |
+| OFF-001 | 5 | contas locais fora da lista bloqueadas (`usermod -L`, `chage -E 0`) | `offboarding` | n/a (requisito da ATI) | implementada |
+| OFF-002 | 5 | shell `nologin` nas contas bloqueadas | `offboarding` | n/a | implementada |
+| OFF-003 | 5 | `authorized_keys` das contas bloqueadas arquivado | `offboarding` | n/a | implementada |
+| OFF-004 | 5 | contas bloqueadas removidas de `wheel` | `offboarding` | n/a | implementada |
+| OFF-005 | 5 | sessões ativas das contas bloqueadas encerradas | `offboarding` | n/a | implementada |
+| OFF-006 | 5 | relatório de contas inativas | `offboarding` | A CONFIRMAR | implementada |
+| OFF-007 | 5 | relatório de senhas sem expiração | `offboarding` | A CONFIRMAR | implementada |
+| OFF-008 | 5 | relatório de chaves SSH sem dono | `offboarding` | n/a | implementada |
 
 Limite declarado: identidades em AD/LDAP são revogadas no diretório, não no host.
 

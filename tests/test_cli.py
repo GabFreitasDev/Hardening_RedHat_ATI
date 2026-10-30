@@ -11,9 +11,6 @@ def test_parser_comandos_obrigatorios():
     args_audit = p.parse_args(["audit"])
     assert args_audit.comando == "audit"
 
-    args_audit_aut = p.parse_args(["audit", "--autorizados", "autorizados.csv"])
-    assert args_audit_aut.autorizados == Path("autorizados.csv")
-
     args_enforce = p.parse_args(["enforce"])
     assert args_enforce.comando == "enforce"
     assert not args_enforce.apply

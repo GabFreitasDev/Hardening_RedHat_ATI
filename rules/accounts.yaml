@@ -1,68 +1,190 @@
-# Regras de Contas, Privilégios e Identidades (Dores 5 e 6 da ATI)
-# Trilha do Aluno B
+# Regras de contas e arquivos de autenticação (trilha do Aluno B, dor 6 - mínimo privilégio).
+# Formato e campos: docs/CONTRATO.md
+#
+# Atenção: no YAML, "no"/"yes" e modos de arquivo (ex.: "0644") SEMPRE entre aspas.
+# Atenção: o campo `referencia` só deixa de ser "A CONFIRMAR" depois de conferir o item
+# no CIS Benchmark oficial do RHEL 9 (não usar numeração de memória).
+
+- id: PERM-002
+  descricao: Permissões de /etc/passwd
+  referencia: "CIS RHEL 9 - Permissões de /etc/passwd (A CONFIRMAR o item no benchmark)"
+  dor_ati: [6]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: permissao_arquivo
+  parametros:
+    caminho: /etc/passwd
+    modo_max: "0644"
+    dono: root
+    grupo: root
+  # valores a confirmar na VM com stat -c '%a %U:%G' e no benchmark
+
+- id: PERM-003
+  descricao: Permissões de /etc/shadow
+  referencia: "CIS RHEL 9 - Permissões de /etc/shadow (A CONFIRMAR o item no benchmark)"
+  dor_ati: [6]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: permissao_arquivo
+  parametros:
+    caminho: /etc/shadow
+    modo_max: "0000"
+    dono: root
+    grupo: root
+  # valores a confirmar na VM com stat -c '%a %U:%G' e no benchmark
+
+- id: PAM-001
+  descricao: Limite de tentativas de autenticação inválidas (deny) no faillock
+  referencia: "CIS RHEL 9 - PAM faillock deny (A CONFIRMAR o item no benchmark)"
+  dor_ati: [6]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: arquivo_chave_valor
+  parametros:
+    arquivo: /etc/security/faillock.conf
+    chave: deny
+    valor: "5"  # VALOR A CONFIRMAR no benchmark oficial
+
+- id: PAM-001b
+  descricao: Tempo de bloqueio de conta (unlock_time) no faillock
+  referencia: "CIS RHEL 9 - PAM faillock unlock_time (A CONFIRMAR o item no benchmark)"
+  dor_ati: [6]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: arquivo_chave_valor
+  parametros:
+    arquivo: /etc/security/faillock.conf
+    chave: unlock_time
+    valor: "900"  # VALOR A CONFIRMAR no benchmark oficial
+
+- id: PAM-002
+  descricao: Tamanho mínimo de senha (minlen) no pwquality
+  referencia: "CIS RHEL 9 - PAM pwquality minlen (A CONFIRMAR o item no benchmark)"
+  dor_ati: [6]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: arquivo_chave_valor
+  parametros:
+    arquivo: /etc/security/pwquality.conf
+    chave: minlen
+    valor: "14"  # VALOR A CONFIRMAR no benchmark oficial
+
+- id: ACC-002
+  descricao: Máscara padrão de criação de arquivos (UMASK) em login.defs
+  referencia: "CIS RHEL 9 - UMASK padrão (A CONFIRMAR o item no benchmark)"
+  dor_ati: [6]
+  severidade: alta
+  plataforma: rhel9
+  primitiva: arquivo_chave_valor
+  parametros:
+    arquivo: /etc/login.defs
+    chave: UMASK
+    valor: "027"  # VALOR A CONFIRMAR no benchmark oficial
+    separador: " "
 
 - id: SUDO-001
-  descricao: Impedir diretiva NOPASSWD indevida no sudoers e sudoers.d
-  referencia: "CIS RHEL 9 - 5.3.4 Ensure sudo commands require authentication"
+  descricao: Proibir NOPASSWD indevido em sudoers e sudoers.d
+  referencia: "CIS RHEL 9 - Sudo sem NOPASSWD (A CONFIRMAR o item no benchmark)"
   dor_ati: [6]
   severidade: critica
   plataforma: rhel9
   primitiva: sudoers
   parametros:
-    proibir: NOPASSWD
+    proibir: nopasswd
   recarregar: sudoers
 
 - id: SUDO-002
-  descricao: Impedir permissões excessivas ALL indevidas em sudoers
-  referencia: "CIS RHEL 9 - 5.3.3 Sudoers restricted specification"
+  descricao: Proibir ALL indevido para quem não for root ou wheel em sudoers
+  referencia: "CIS RHEL 9 - Sudo restrito a root e wheel (A CONFIRMAR o item no benchmark)"
   dor_ati: [6]
   severidade: alta
   plataforma: rhel9
   primitiva: sudoers
   parametros:
-    verificar_regras_gerais: true
+    proibir: all
+    permitidos:
+      - root
+      - "%wheel"
   recarregar: sudoers
 
 - id: SUDO-003
-  descricao: Grupo wheel restrito exclusivamente a administradores autorizados
-  referencia: "CIS RHEL 9 - 5.3.2 Restrict wheel group membership"
+  descricao: Restringir membros do grupo wheel aos administradores autorizados
+  referencia: "CIS RHEL 9 - Grupo wheel restrito (A CONFIRMAR o item no benchmark)"
   dor_ati: [6]
   severidade: alta
   plataforma: rhel9
   primitiva: conta_usuario
   parametros:
+    modo: membros_grupo
     grupo: wheel
-    autorizados: ["root", "admin_ati", "secops"]
+    permitidos:  # alinhar com demo/dados/autorizados.csv
+      - root
+      - admin_ati
+      - secops
 
 - id: ACC-001
-  descricao: UID 0 exclusivo para conta root (auditoria manual)
-  referencia: "CIS RHEL 9 - 5.4.3 Ensure root is the only UID 0 account"
+  descricao: UID 0 atribuído exclusivamente à conta root
+  referencia: "CIS RHEL 9 - UID 0 exclusivo para root (A CONFIRMAR o item no benchmark)"
   dor_ati: [6]
   severidade: critica
   plataforma: rhel9
   primitiva: conta_usuario
   parametros:
-    uid_zero_apenas: root
-  somente_auditoria: true
+    modo: uid0_unico
+  # somente_auditoria: true  # Aguarda definição/suporte do campo pelo Aluno A no motor
 
 - id: PERM-001
-  descricao: Auditoria e restrição de binários com SUID/SGID perigosos
-  referencia: "CIS RHEL 9 - 6.1.13 Ensure no unauthorized SUID/SGID files exist"
+  descricao: Arquivos com bits SUID/SGID auditados contra lista de referência
+  referencia: "CIS RHEL 9 - SUID/SGID (A CONFIRMAR o item no benchmark)"
   dor_ati: [6]
   severidade: media
   plataforma: rhel9
   primitiva: suid_sgid
   parametros:
-    bloquear_inseguros: ["rlogin", "rsh", "rcp"]
-  somente_auditoria: true
+    # lista gerada na VM limpa RHEL 9.8 (snapshot base-limpa), antes do sujar_servidor.sh; /usr/bin/vmware-user-suid-wrapper vem do VMware: regenerar a lista se mudar a plataforma
+    permitidos:
+      - /usr/bin/at
+      - /usr/bin/chage
+      - /usr/bin/chfn
+      - /usr/bin/chsh
+      - /usr/bin/crontab
+      - /usr/bin/fusermount
+      - /usr/bin/fusermount3
+      - /usr/bin/gpasswd
+      - /usr/bin/locate
+      - /usr/bin/mount
+      - /usr/bin/newgrp
+      - /usr/bin/passwd
+      - /usr/bin/pkexec
+      - /usr/bin/su
+      - /usr/bin/sudo
+      - /usr/bin/umount
+      - /usr/bin/vmware-user-suid-wrapper
+      - /usr/bin/write
+      - /usr/libexec/dbus-1/dbus-daemon-launch-helper
+      - /usr/libexec/openssh/ssh-keysign
+      - /usr/libexec/sssd/krb5_child
+      - /usr/libexec/sssd/ldap_child
+      - /usr/libexec/sssd/proxy_child
+      - /usr/libexec/sssd/selinux_child
+      - /usr/libexec/utempter/utempter
+      - /usr/libexec/Xorg.wrap
+      - /usr/lib/polkit-1/polkit-agent-helper-1
+      - /usr/sbin/grub2-set-bootflag
+      - /usr/sbin/lockdev
+      - /usr/sbin/pam_timestamp_check
+      - /usr/sbin/unix_chkpwd
+      - /usr/sbin/userhelper
+  # somente_auditoria: true  # Aguarda definição/suporte do campo pelo Aluno A no motor
 
-- id: OFF-001
-  descricao: Contas locais inativas ou fora da lista de autorizados bloqueadas
-  referencia: "Requisito ATI - Trilha B Offboarding"
-  dor_ati: [5]
-  severidade: alta
-  plataforma: rhel9
-  primitiva: offboarding
-  parametros:
-    acao: bloquear_inativos
-    expiracao_dias: 90
+# o offboarding roda pelo subcomando offboarding e pelo --autorizados do audit/enforce, não como regra YAML
+# - id: OFF-001
+#   descricao: Contas não autorizadas desativadas
+#   referencia: "Requisito ATI - Trilha B Offboarding (A CONFIRMAR o item no benchmark)"
+#   dor_ati: [5]
+#   severidade: alta
+#   plataforma: rhel9
+#   primitiva: offboarding
+
+
+

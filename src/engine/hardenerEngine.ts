@@ -465,12 +465,8 @@ export class HardenerEngine {
     for (const regra of regras) {
       const { resultado, descricaoMudanca } = this.verificarRegra(regra);
       if (resultado.status === "NAO_CONFORME") {
-        if (regra.somente_auditoria) {
-          resultado.detalhe = "Auditoria manual: correção automática desabilitada por segurança (ação manual requerida)";
-        } else {
-          resultado.status = "SERIA_CORRIGIDO";
-          resultado.detalhe = descricaoMudanca;
-        }
+        resultado.status = "SERIA_CORRIGIDO";
+        resultado.detalhe = descricaoMudanca;
       }
       resultados.push(resultado);
     }
@@ -498,11 +494,6 @@ export class HardenerEngine {
       resultados.push(resultado);
 
       if (resultado.status !== "NAO_CONFORME") {
-        continue;
-      }
-
-      if (regra.somente_auditoria) {
-        resultado.detalhe = "Auditoria manual: mantido não conforme por segurança (ação manual requerida)";
         continue;
       }
 
@@ -762,12 +753,6 @@ ocredit = -1
           r.status = "FALHOU";
           r.detalhe = `validação de '${servico}' falhou: ${syntaxError}; alterações revertidas`;
         }
-        continue;
-      }
-
-      // Static configs without daemon (e.g. sudoers with visudo -c) don't need systemctl reload
-      if (servico === "sudoers") {
-        this.log(`Validação sintática de 'sudoers' aprovada via visudo -c (sem daemon de serviço para recarregar).`);
         continue;
       }
 
