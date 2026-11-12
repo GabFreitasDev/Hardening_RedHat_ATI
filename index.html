@@ -2,19 +2,196 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23dc2626' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/><path d='m9 12 2 2 4-4'/></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hardening RedHat ATI</title>
-    <meta name="description" content="Ferramenta de auditoria, aplicação e reversão de regras de hardening para Red Hat Enterprise Linux 9 baseada em políticas declarativas e CIS Benchmark com mapeamento de dores da ATI." />
-    <meta property="og:title" content="Hardening RedHat ATI" />
-    <meta property="og:description" content="Ferramenta de auditoria, aplicação e reversão de regras de hardening para Red Hat Enterprise Linux 9 baseada em políticas declarativas e CIS Benchmark com mapeamento de dores da ATI." />
+    <title>Hardening RedHat ATI - Kit CLI para RHEL 9</title>
+    <meta name="description" content="Ferramenta CLI para RHEL 9 de auditoria, aplicação e reversão de regras de hardening baseadas no CIS Benchmark e dores operacionais da ATI." />
+    <meta property="og:title" content="Hardening RedHat ATI - Kit CLI para RHEL 9" />
+    <meta property="og:description" content="Ferramenta CLI para RHEL 9 de auditoria, aplicação e reversão de regras de hardening baseadas no CIS Benchmark e dores operacionais da ATI." />
     <meta property="og:type" content="website" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23dc2626' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/><path d='m9 12 2 2 4-4'/></svg>" />
+    <style>
+      :root {
+        --bg: #090d16;
+        --card: #111827;
+        --border: #1f293d;
+        --text: #f3f4f6;
+        --muted: #9ca3af;
+        --red: #ef4444;
+        --red-glow: rgba(239, 68, 68, 0.15);
+        --green: #10b981;
+        --blue: #3b82f6;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        line-height: 1.6;
+        padding: 2rem 1rem;
+      }
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+      }
+      header {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 2rem;
+        margin-bottom: 2rem;
+      }
+      .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      .badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.25rem 0.65rem;
+        border-radius: 9999px;
+        background: #1f2937;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      .badge-red { background: var(--red-glow); color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
+      .badge-green { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
+      .badge-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); }
+      h1 { font-size: 2.25rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; }
+      p.lead { font-size: 1.125rem; color: var(--muted); }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+      }
+      .card h2 {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .cli-box {
+        background: #030712;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        font-family: var(--mono);
+        font-size: 0.875rem;
+        overflow-x: auto;
+        margin: 1rem 0;
+      }
+      .cli-box code { color: #e5e7eb; }
+      .comment { color: #6b7280; }
+      .prompt { color: #ef4444; }
+      ul { padding-left: 1.25rem; color: var(--muted); font-size: 0.95rem; }
+      li { margin-bottom: 0.35rem; }
+      li strong { color: var(--text); }
+      .banner {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 2rem;
+        font-size: 0.925rem;
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        padding-top: 1.5rem;
+        text-align: center;
+        font-size: 0.875rem;
+        color: #6b7280;
+      }
+    </style>
   </head>
-  <body class="bg-slate-950 text-slate-100 antialiased min-h-screen selection:bg-red-900/60 selection:text-white">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+  <body>
+    <div class="container">
+      <header>
+        <div class="badge-row">
+          <span class="badge badge-red">Red Hat Enterprise Linux 9</span>
+          <span class="badge badge-green">Python 3.9 Nativo</span>
+          <span class="badge badge-blue">CIS Benchmark v1.0.0</span>
+          <span class="badge">36 Regras Declarativas</span>
+          <span class="badge badge-green">114 Testes Unitários</span>
+        </div>
+        <h1>Hardening RedHat ATI</h1>
+        <p class="lead">Ferramenta CLI autônoma de engenharia de software para auditoria, aplicação e reversão de configurações de segurança em sistemas RHEL 9.</p>
+      </header>
+
+      <div class="banner">
+        <strong>Kit de Hardening 100% CLI:</strong> Esta ferramenta foi desenhada para operação em hosts e servidores corporativos via terminal/SSH. Toda a lógica de negócio, regras declarativas e testes residem no pacote Python <code>hardener/</code> e nos manifestos <code>rules/*.yaml</code>.
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>1. Auditoria Não-Destrutiva</h2>
+          <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 0.75rem;">Inspeciona o sistema contra as 36 regras sem alterar arquivos ou serviços.</p>
+          <div class="cli-box">
+            <code><span class="prompt">$</span> sudo python3 -m hardener audit</code>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>2. Simulação (Dry-Run)</h2>
+          <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 0.75rem;">Prevê cirurgicamente as correções que seriam aplicadas em disco.</p>
+          <div class="cli-box">
+            <code><span class="prompt">$</span> sudo python3 -m hardener enforce</code>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>3. Aplicação Atômica</h2>
+          <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 0.75rem;">Cria backup transacional, aplica regras e valida serviços (sshd, sudoers).</p>
+          <div class="cli-box">
+            <code><span class="prompt">$</span> sudo python3 -m hardener enforce --apply</code>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>4. Reversão Cirúrgica (Rollback)</h2>
+          <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 0.75rem;">Restaura arquivos originais e recarrega serviços no sentido inverso.</p>
+          <div class="cli-box">
+            <code><span class="prompt">$</span> sudo python3 -m hardener rollback</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 2rem;">
+        <h2>Dores da ATI Cobertas pelo Projeto</h2>
+        <ul style="margin-top: 0.75rem;">
+          <li><strong>Dor 1: Ransomware & Execução em Áreas Temporárias</strong> — Partições <code>/tmp</code>, <code>/var/tmp</code>, <code>/dev/shm</code> com <code>noexec,nosuid,nodev</code>, SELinux em <code>Enforcing</code> e proteção de kernel (ASLR total, dmesg e kptr restritos).</li>
+          <li><strong>Dor 2: Uploads Web Maliciosos</strong> — Pasta de uploads isolada (permissão octal <code>0640</code> sem execução, dono <code>root:apache</code>, contexto SELinux <code>httpd_sys_rw_content_t</code> e Apache bloqueando CGI/scripts).</li>
+          <li><strong>Dor 3: Movimentação Lateral & Rede</strong> — Firewalld em menor privilégio, auditoria de portas em escuta, SSH restrito ao grupo <code>wheel</code>, e desativação de <code>ip_forward</code> e redirects ICMP.</li>
+          <li><strong>Dor 5: Revogação de Credenciais (Offboarding)</strong> — Higienização de contas clandestinas, travamento de senhas (<code>usermod -L</code>, <code>chage -E 0</code>), shell <code>/sbin/nologin</code>, revogação de chaves SSH e desvinculação do grupo <code>wheel</code>.</li>
+          <li><strong>Dor 6: Mínimo Privilégio</strong> — Proibição de <code>NOPASSWD</code> no sudoers, erradicação de UIDs duplicados com 0, políticas PAM (faillock, pwquality) e umask restritiva <code>027</code>.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Validação de Regras e Testes Unitários</h2>
+        <div class="cli-box">
+          <code><span class="comment"># Validar sintaxe das 36 regras declarativas YAML</span><br>
+          <span class="prompt">$</span> python3 -m hardener validar<br><br>
+          <span class="comment"># Executar a suíte de 114 testes unitários automatizados</span><br>
+          <span class="prompt">$</span> PYTHONPATH=. pytest</code>
+        </div>
+        <p style="font-size: 0.875rem; color: var(--muted);">Para documentação detalhada e roteiro completo de apresentação para bancas, consulte o <strong>README.md</strong>.</p>
+      </div>
+
+      <footer>
+        Agência Estadual de Tecnologia da Informação (ATI) &bull; Projeto de Hardening RHEL 9 &bull; Versão 0.1.0
+      </footer>
+    </div>
   </body>
 </html>
