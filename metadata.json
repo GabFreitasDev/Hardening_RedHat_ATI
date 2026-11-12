@@ -1,6 +1,0 @@
-{
-  "name": "Hardening RedHat ATI",
-  "description": "Ferramenta CLI para RHEL 9 de auditoria, aplicação e reversão de regras de hardening baseadas no CIS Benchmark e dores operacionais da ATI.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

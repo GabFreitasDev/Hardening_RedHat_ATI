@@ -3,6 +3,11 @@ node_modules/
 dist/
 bun.lock
 *.tsbuildinfo
+package.json
+package-lock.json
+metadata.json
+vite.config.*
+*.html
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

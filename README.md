@@ -32,6 +32,47 @@ A ferramenta **Hardening RedHat ATI** foi desenvolvida como uma solução unific
   - Não é um scanner externo de portas ou vulnerabilidades de rede (como Nmap ou Nessus): ela opera a partir de dentro do sistema operacional (*in-host*).
   - Não é uma ferramenta de gestão de patches/atualizações de pacotes (Dor 4 da ATI): o escopo foca exclusivamente na **configuração interna do sistema operacional**.
 
+### 1.3. Pré-requisitos, Instalação e Execução Rápida
+
+O kit é uma ferramenta puramente em **Python 3.9** (padrão nativo do RHEL 9) com uma **única dependência externa de produção: `PyYAML`**.
+
+#### Opção A: No Red Hat Enterprise Linux 9 / Rocky Linux 9 (Recomendado)
+Na VM corporativa ou servidor alvo, utilize os pacotes nativos do gerenciador `dnf` ( dispensando ambientes virtuais para garantir herança de privilégio com `sudo`):
+
+```bash
+# 1. Instalar o Python 3 e o PyYAML do sistema
+sudo dnf install -y python3 python3-pyyaml git
+
+# 2. (Opcional) Instalar o pytest para execução da suíte de testes
+sudo dnf install -y python3-pytest
+
+# 3. Clonar o repositório e validar
+git clone https://github.com/GabFreitasDev/Hardening_RedHat_ATI.git
+cd Hardening_RedHat_ATI
+python3 -m hardener validar
+```
+
+#### Opção B: Em Qualquer Ambiente Linux / Mac / WSL com `pip`
+Caso queira desenvolver ou testar em ambiente isolado (`venv`):
+
+```bash
+git clone https://github.com/GabFreitasDev/Hardening_RedHat_ATI.git
+cd Hardening_RedHat_ATI
+
+# Instalar a dependência de runtime (PyYAML)
+pip install -r requirements.txt
+
+# (Opcional) Instalar dependências para testes (pytest)
+pip install -r requirements-dev.txt
+```
+
+#### Trava Operacional de Segurança
+Para aplicar alterações no sistema com `enforce --apply`, crie a sentinela obrigatória:
+```bash
+sudo touch /etc/hardener-vm
+```
+*Sem este arquivo, a ferramenta opera estritamente em modo de auditoria ou simulação não-destrutiva (dry-run).*
+
 ---
 
 ## 2. O Conceito Central: O que é uma "Primitiva" e por que essa palavra?
@@ -139,6 +180,8 @@ O repositório é organizado de forma modular, permitindo a separação limpa en
 Hardening_RedHat_ATI/
 ├── README.md                   # Documento arquitetural, didático, operacional e referência do projeto
 ├── VALIDAR_NA_VM.md            # Checklist prático de testes reais na VM RHEL 9
+├── requirements.txt            # Dependência de produção (PyYAML)
+├── requirements-dev.txt        # Dependência de desenvolvimento/testes (pytest)
 │
 ├── hardener/                   # PACOTE PYTHON PRINCIPAL
 │   ├── __init__.py             # Metadados do pacote e versão da ferramenta (0.1.0)
